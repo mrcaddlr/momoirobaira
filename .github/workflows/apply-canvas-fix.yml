@@ -1,0 +1,55 @@
+name: Apply canvas background fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply requested UI changes
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          s=s.replace('cursor:none','cursor:auto')
+          s=s.replace('<div class="cursor-dot" id="cursorDot"></div><div class="cursor-ring" id="cursorRing"></div>','')
+          s=s.replace('<canvas id="fx"></canvas><canvas id="ambientCanvas"></canvas>','<canvas id="fx"></canvas><canvas id="ambientCanvas"></canvas><canvas id="mouseTrail"></canvas>')
+          s=s.replace('#fx{z-index:0}#ambientCanvas{z-index:1}','#fx{z-index:0}#ambientCanvas{z-index:1}#mouseTrail{z-index:3}')
+          for x in [
+            '.cursor-dot,.cursor-ring{position:fixed;left:0;top:0;pointer-events:none;z-index:10000;transform:translate(-50%,-50%)}',
+            '.cursor-dot{width:7px;height:7px;border-radius:50%;background:var(--a);box-shadow:0 0 14px color-mix(in srgb,var(--a) 70%,transparent)}',
+            '.cursor-ring{width:30px;height:30px;border:1.5px solid color-mix(in srgb,var(--a) 75%,transparent);border-radius:50%;transition:width .18s var(--ease),height .18s var(--ease),background .18s ease,border-color .18s ease}',
+            'body.cursor-hover .cursor-ring{width:44px;height:44px;background:color-mix(in srgb,var(--a) 9%,transparent);border-color:var(--a)}',
+            'body.cursor-down .cursor-ring{width:24px;height:24px}'
+          ]: s=s.replace(x,'')
+          marker='// Canvas background: particles + home lava-lamp blobs'
+          start=s.find(marker)
+          end=s.find('// Init',start)
+          if start<0 or end<0: raise SystemExit('canvas section markers not found')
+          canvas=r'''// Canvas UI-inspired liquid background + restored mouse trail
+const fx=$('fx'),fctx=fx.getContext('2d'),ac=$('ambientCanvas'),actx=ac.getContext('2d'),trailCanvas=$('mouseTrail'),trailCtx=trailCanvas.getContext('2d');let W=innerWidth,H=innerHeight,dpr=1,tt=0;
+const fluid=Array.from({length:16},()=>({x:Math.random(),y:Math.random(),vx:0,vy:0,r:.03+Math.random()*.04,h:Math.random()*6.28}));
+const trail=Array.from({length:24},()=>({x:-100,y:-100,life:0,r:1}));let trailHead=0,mouseX=-100,mouseY=-100;
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);for(const c of [fx,ac,trailCanvas]){c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';c.getContext('2d').setTransform(dpr,0,0,dpr,0,0)}}
+function fxColor(){return getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#ff79a8'}
+addEventListener('pointermove',e=>{if(e.pointerType!=='touch'){mouseX=e.clientX;mouseY=e.clientY;const t=trail[trailHead];t.x=mouseX;t.y=mouseY;t.life=1;t.r=2.4;trailHead=(trailHead+1)%trail.length}});
+function draw(){fctx.clearRect(0,0,W,H);actx.clearRect(0,0,W,H);trailCtx.clearRect(0,0,W,H);if(document.documentElement.dataset.fx!=='off'){const col=fxColor();const grad=actx.createLinearGradient(0,0,W,H);grad.addColorStop(0,col+'08');grad.addColorStop(.5,'transparent');grad.addColorStop(1,col+'0c');actx.fillStyle=grad;actx.fillRect(0,0,W,H);fluid.forEach(b=>{const tx=.5+Math.sin(tt*.00018+b.h)*.3,ty=.55+Math.cos(tt*.00015+b.h*1.7)*.25;b.vx+=(tx-b.x)*.000015;b.vy+=(ty-b.y)*.000015;b.vx*=.985;b.vy*=.985;b.x+=b.vx;b.y+=b.vy;const x=b.x*W,y=b.y*H,r=b.r*Math.min(W,H),g=actx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,col+'12');g.addColorStop(.45,col+'06');g.addColorStop(1,'transparent');actx.fillStyle=g;actx.beginPath();actx.arc(x,y,r,0,Math.PI*2);actx.fill()});trail.forEach(t=>{if(t.life<=0)return;t.life*=.9;t.r*=.96;trailCtx.beginPath();trailCtx.arc(t.x,t.y,Math.max(.35,t.r),0,Math.PI*2);trailCtx.fillStyle=col+Math.floor(t.life*110).toString(16).padStart(2,'0');trailCtx.fill()})}tt++;requestAnimationFrame(draw)}resize();addEventListener('resize',resize);draw();
+'''
+          s=s[:start]+canvas+s[end:]
+          p.write_text(s)
+      - name: Commit UI changes and remove helper
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Restore mouse trail and update canvas background" || true
+          git rm .github/workflows/apply-canvas-fix.yml || true
+          git commit -m "Remove canvas fix workflow" || true
+          git push
