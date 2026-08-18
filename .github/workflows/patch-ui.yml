@@ -1,0 +1,75 @@
+name: Patch Momoirobara UI
+on:
+  push:
+    branches: [agent/momoirobara-ui-fixes]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply UI patch
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css=r'''<style id="momoirobara-ui-patch">
+/* right-side tall lyrics popup */
+.drawer{left:auto!important;right:18px!important;top:18px!important;bottom:112px!important;width:min(400px,calc(100vw - 36px))!important;height:auto!important;max-height:none!important;padding:12px!important;border:1px solid var(--border)!important;border-radius:26px!important;background:color-mix(in srgb,var(--card) 92%,transparent)!important;backdrop-filter:blur(30px) saturate(1.18)!important;box-shadow:0 30px 90px #0002,0 0 55px color-mix(in srgb,var(--a) 13%,transparent)!important;overflow:hidden!important;transform:translateX(calc(100% + 30px))!important;transition:transform .58s cubic-bezier(.16,1,.3,1),opacity .3s ease,visibility 0s linear .58s!important}
+.drawer.open{transform:translateX(0)!important;opacity:1!important;visibility:visible!important;transition:transform .58s cubic-bezier(.16,1,.3,1),opacity .3s ease!important}
+.drawerHead,.drawerMeta,.drawer .eyebrow,.lyricsClose{display:none!important}
+.drawer .lyr{height:100%!important;max-height:none!important;padding:48px 16px 54px!important;scroll-behavior:smooth!important;overscroll-behavior:contain!important}
+.drawer .line{margin:5px 0!important;padding:10px 9px!important;border-radius:13px!important;opacity:.3!important;color:var(--muted)!important;transform:translateY(5px) scale(.985);filter:blur(.15px);transition:opacity .3s ease,transform .45s cubic-bezier(.16,1,.3,1),color .25s ease,filter .3s ease,background-size .08s linear!important}
+.drawer .line.active{opacity:1!important;color:var(--text)!important;transform:translateY(0) scale(1.035);filter:none;font-weight:950!important;background:linear-gradient(90deg,color-mix(in srgb,var(--a) 20%,transparent) 0%,color-mix(in srgb,var(--a) 20%,transparent) var(--progress,0%),transparent var(--progress,0%),transparent 100%)!important}
+.drawer .line.active:before,.drawer .line.active:after{content:none!important;display:none!important}
+/* canvas-ui inspired ambient effects */
+#pointerGlow{position:fixed;left:0;top:0;width:300px;height:300px;border-radius:50%;pointer-events:none;z-index:1;transform:translate(-50%,-50%);background:radial-gradient(circle,color-mix(in srgb,var(--a) 13%,transparent),transparent 68%);filter:blur(8px);opacity:.75;will-change:transform}
+#ambientCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;opacity:.62;mix-blend-mode:screen}
+.canvas-bloom{position:fixed;width:10px;height:10px;border:1px solid var(--a);border-radius:50%;pointer-events:none;z-index:20;transform:translate(-50%,-50%);animation:canvasBloom .72s cubic-bezier(.16,1,.3,1) forwards;box-shadow:0 0 22px color-mix(in srgb,var(--a) 35%,transparent)}
+@keyframes canvasBloom{to{width:150px;height:150px;opacity:0;box-shadow:0 0 50px color-mix(in srgb,var(--b) 20%,transparent)}}
+.canvas-spark{position:fixed;width:4px;height:4px;border-radius:50%;pointer-events:none;z-index:20;background:var(--a);box-shadow:0 0 14px var(--a);animation:canvasSpark .85s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes canvasSpark{to{transform:translate(var(--dx),var(--dy)) scale(.1);opacity:0}}
+@media(max-width:850px){.drawer{left:10px!important;right:10px!important;top:12px!important;bottom:122px!important;width:auto!important}}
+</style>'''
+          s=s.replace('</head>',css+'</head>',1)
+          s=s.replace('<canvas id="fx"></canvas><canvas aria-hidden="true" id="trailCanvas"></canvas>','<canvas id="fx"></canvas><canvas id="ambientCanvas"></canvas><canvas aria-hidden="true" id="trailCanvas"></canvas><div id="pointerGlow"></div>',1)
+          # Make the drawer lyrics-only while preserving the existing lyric container.
+          s=re.sub(r'<div class="drawer" id="lyricsDrawer"[^>]*>\s*<div class="drawerHead">.*?</div>\s*<div class="lyr" id="lyr">', '<div class="drawer" id="lyricsDrawer" role="dialog" aria-label="Lyrics">\n<div class="lyr" id="lyr">', s, count=1, flags=re.S)
+          # Remove old live lyrics strip from the player if present.
+          s=re.sub(r'<div class="playerlyr"[^>]*>.*?</div>', '', s, count=1, flags=re.S)
+          extra=r'''<script id="momoirobara-ui-runtime">
+(()=>{
+  const $=id=>document.getElementById(id);
+  const root=document.documentElement;
+  /* Robust theme persistence and immediate repaint. */
+  const themeSelect=$('theme');
+  const allowed=['sakura','rose','lavender','sky','mint','peach','berry','latte','frappe','macchiato','mocha'];
+  function applyTheme(v){v=allowed.includes(v)?v:'sakura';root.dataset.theme=v;localStorage.setItem('theme',v);if(themeSelect)themeSelect.value=v;document.body.classList.add('theme-switching');requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.remove('theme-switching')))}
+  if(themeSelect){themeSelect.addEventListener('change',e=>applyTheme(e.target.value));applyTheme(localStorage.getItem('theme')||themeSelect.value||'sakura')}
+  /* Smooth lyric progress at animation-frame rate instead of coarse timeupdate events. */
+  let raf=0;
+  function tick(){if(typeof lyricTick==='function')lyricTick();if(window.audioEl && !audioEl.paused&&!audioEl.ended)raf=requestAnimationFrame(tick);else raf=0}
+  if(window.audioEl){audioEl.addEventListener('play',()=>{if(!raf)raf=requestAnimationFrame(tick)});audioEl.addEventListener('pause',()=>{if(raf){cancelAnimationFrame(raf);raf=0}})}
+  /* Pointer glow */
+  const glow=$('pointerGlow');let gx=-400,gy=-400,tx=-400,ty=-400;
+  addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||e.pointerType==='pen'){gx=e.clientX;gy=e.clientY}},{passive:true});
+  function glowFrame(){tx+=(gx-tx)*.16;ty+=(gy-ty)*.16;if(glow)glow.style.transform=`translate(${tx}px,${ty}px) translate(-50%,-50%)`;requestAnimationFrame(glowFrame)}
+  glowFrame();
+  /* Soft click bloom + tiny particles. */
+  addEventListener('pointerdown',e=>{if(!(e.pointerType==='mouse'||e.pointerType==='pen'))return;const b=document.createElement('span');b.className='canvas-bloom';b.style.left=e.clientX+'px';b.style.top=e.clientY+'px';document.body.appendChild(b);setTimeout(()=>b.remove(),760);for(let i=0;i<5;i++){const p=document.createElement('span');p.className='canvas-spark';p.style.left=e.clientX+'px';p.style.top=e.clientY+'px';p.style.setProperty('--dx',(Math.random()*70-35)+'px');p.style.setProperty('--dy',(Math.random()*70-35)+'px');document.body.appendChild(p);setTimeout(()=>p.remove(),900)}},{passive:true});
+  /* Ambient canvas particles. */
+  const c=$('ambientCanvas');if(c){const ctx=c.getContext('2d');let w=0,h=0,d=1;const pts=Array.from({length:42},()=>({x:Math.random(),y:Math.random(),r:.6+Math.random()*2,v:.2+Math.random()*.5,p:Math.random()*7}));function resize(){d=Math.min(devicePixelRatio||1,2);w=innerWidth;h=innerHeight;c.width=w*d;c.height=h*d;c.style.width=w+'px';c.style.height=h+'px';ctx.setTransform(d,0,0,d,0,0)}function draw(t){ctx.clearRect(0,0,w,h);const cs=getComputedStyle(root),a=cs.getPropertyValue('--a').trim()||'#ff78a7',b=cs.getPropertyValue('--b').trim()||'#ffb6cf';for(const q of pts){const x=q.x*w+Math.sin(t*.00025*q.v+q.p)*18,y=q.y*h+Math.cos(t*.0003*q.v+q.p)*18;ctx.globalAlpha=.08+.08*(.5+.5*Math.sin(t*.001*q.v+q.p));ctx.fillStyle=a;ctx.beginPath();ctx.arc(x,y,q.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=.045;for(let i=0;i<3;i++){const x=w*(.2+i*.3)+Math.sin(t*.00012+i)*80,y=h*(.25+i*.25)+Math.cos(t*.00015+i)*60,r=Math.min(w,h)*.24,g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,i%2?a:b);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;requestAnimationFrame(draw)}resize();addEventListener('resize',resize,{passive:true});requestAnimationFrame(draw)}
+})();
+</script>'''
+          s=s.replace('</body>',extra+'</body>',1)
+          p.write_text(s,encoding='utf-8')
+      - name: Commit patched file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Fix lyrics popup themes and canvas effects"
+          git push
