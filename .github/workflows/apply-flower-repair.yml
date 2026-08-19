@@ -1,0 +1,35 @@
+name: Apply Momoirobara flower UI repair
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/scripts/repair_momoirobara.py
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: "github.event.head_commit.message != 'chore: apply Momoirobara flower UI repair'"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply repair
+        run: python3 .github/scripts/repair_momoirobara.py
+      - name: Validate HTML structure
+        run: python3 - <<'PY'
+from pathlib import Path
+s=Path('index.html').read_text(encoding='utf-8')
+assert '</style>' in s and '</body>' in s
+assert 'MOMOIROBARA FLOWER UI REPAIR' in s
+assert 'data-density' not in s
+assert '.player,.player-bar,.now-playing{background:transparent' not in s
+assert 'document.addEventListener(\'pointerdown\',burst' not in s
+print('repair validation passed')
+PY
+      - name: Commit repaired UI
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git rm .github/scripts/repair_momoirobara.py .github/workflows/apply-flower-repair.yml
+          git commit -m 'chore: apply Momoirobara flower UI repair'
+          git push origin main
