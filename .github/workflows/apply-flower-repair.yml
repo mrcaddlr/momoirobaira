@@ -1,4 +1,4 @@
-name: Apply Momoirobara flower UI repair
+name: Apply Momoirobara UI repair
 
 on:
   push:
@@ -17,9 +17,10 @@ jobs:
         run: node .github/scripts/repair_momoirobara.mjs
       - name: Validate repaired index
         run: |
-          grep -q 'MOMOIROBARA TARGETED REPAIR V6' index.html
+          grep -q 'MOMOIROBARA BOTANICAL UI V7' index.html
+          ! grep -q 'MOMOIROBARA TARGETED REPAIR V6' index.html
           ! grep -q 'MOMOIROBARA FLOWER UI REPAIR V[2-5]' index.html
-          grep -q 'momo-targeted-repair-v6' index.html
+          grep -q 'momo-botanical-ui-v7' index.html
           grep -q 'momo-ripple' index.html
           grep -q 'lyric-line' index.html
       - name: Commit repaired index
@@ -28,5 +29,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'chore: apply targeted Momoirobara UI repair'
+          git commit -m 'chore: apply Momoirobara botanical UI repair'
           git push origin main
