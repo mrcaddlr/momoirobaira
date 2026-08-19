@@ -1,6 +1,9 @@
 name: Apply Momoirobara flower UI repair
 
-on: [push]
+on:
+  push:
+    paths:
+      - '.github/scripts/repair_momoirobara.mjs'
 
 permissions:
   contents: write
@@ -16,12 +19,17 @@ jobs:
       - name: Apply repair
         run: node .github/scripts/repair_momoirobara.mjs
       - name: Validate repair
-        run: grep -q 'MOMOIROBARA FLOWER UI REPAIR' index.html && ! grep -q 'data-density' index.html && ! grep -q 'pointerdown.*burst' index.html
+        run: |
+          grep -q 'MOMOIROBARA FLOWER UI REPAIR V4' index.html
+          ! grep -q 'data-density' index.html
+          ! grep -q 'pointerdown.*burst' index.html
+          grep -q 'momoCanvasUI' index.html
+          grep -q 'lyric-line' index.html
       - name: Commit repaired index
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'chore: apply Momoirobara flower UI repair'
+          git commit -m 'chore: apply Momoirobara V4 UI repair'
           git push origin main
