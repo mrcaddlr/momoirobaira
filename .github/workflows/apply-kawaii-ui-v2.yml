@@ -1,0 +1,32 @@
+name: Apply clean kawaii UI v2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/scripts/apply_kawaii_ui.py
+      - .github/workflows/apply-kawaii-ui-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.head_commit.message != 'feat: apply clean kawaii UI v2'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply and validate UI
+        run: python3 .github/scripts/apply_kawaii_ui.py
+
+      - name: Commit finished UI and remove patch files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/scripts/apply_kawaii_ui.py .github/workflows/apply-kawaii-ui-v2.yml
+          git commit -m "feat: apply clean kawaii UI v2"
+          git push origin main
