@@ -1,0 +1,97 @@
+name: apply ui revision
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/apply-ui-revision.yml
+
+permissions:
+  contents: write
+
+jobs:
+  revise:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply UI revision
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Restore the actual Catppuccin palettes and add Midnight.
+          palettes = {
+            'latte': '--a:#8839ef;--b:#1e66f5;--bg:#eff1f5;--card:rgba(239,241,245,.90);--solid:#e6e9ef;--text:#4c4f69;--muted:#6c6f85;--border:#ccd0da;--track:#dce0e8',
+            'frappe': '--a:#ca9ee6;--b:#8caaee;--bg:#303446;--card:rgba(41,44,60,.90);--solid:#414559;--text:#c6d0f5;--muted:#a5adce;--border:#51576d;--track:#303446',
+            'macchiato': '--a:#c6a0f6;--b:#8aadf4;--bg:#24273a;--card:rgba(30,32,48,.92);--solid:#363a4f;--text:#cad3f5;--muted:#a5adcb;--border:#494d64;--track:#24273a',
+            'mocha': '--a:#cba6f7;--b:#89b4fa;--bg:#1e1e2e;--card:rgba(24,24,37,.92);--solid:#313244;--text:#cdd6f4;--muted:#a6adc8;--border:#45475a;--track:#1e1e2e',
+            'midnight': '--a:#7c9cff;--b:#b78cff;--bg:#090d18;--card:rgba(13,18,32,.92);--solid:#101629;--text:#e8ebff;--muted:#8992b0;--border:#202945;--track:#171f36'
+          }
+          for name, vals in palettes.items():
+            pat = rf':root\[data-theme="{name}"\]\{{[^}}]*\}}'
+            s, n = re.subn(pat, f':root[data-theme="{name}"]{{{vals}}}', s, count=1)
+            if not n:
+              s = s.replace('\n*{box-sizing:border-box;', f'\n:root[data-theme="{name}"]{{{vals}}}\n*{{box-sizing:border-box;', 1)
+
+          # Remove the fake cursor completely and restore the normal browser cursor.
+          s = s.replace('cursor:none}', 'cursor:auto}', 1)
+          s = s.replace('button{border:0;background:none;color:inherit;cursor:none}', 'button{border:0;background:none;color:inherit;cursor:pointer}')
+          s = s.replace('cursor:none}.volume', 'cursor:pointer}.volume')
+          s = re.sub(r'\.cursor-dot,\.cursor-ring\{.*?\}\nbody\.cursor-hover \.cursor-ring\{.*?\}\nbody\.cursor-down \.cursor-ring\{.*?\}\n', '', s, count=1, flags=re.S)
+          s = s.replace('<canvas id="fx"></canvas><canvas id="ambientCanvas"></canvas>\n<div class="cursor-dot" id="cursorDot"></div><div class="cursor-ring" id="cursorRing"></div>', '<canvas id="fx"></canvas><canvas id="ambientCanvas"></canvas><canvas id="trailCanvas"></canvas>')
+          s = re.sub(r'<div class="setting"><div><b>Custom cursor</b>.*?</div></div>', '', s, count=1, flags=re.S)
+          s = s.replace('<option value="mocha">Mocha</option></select>', '<option value="mocha">Mocha</option><option value="midnight">Midnight</option></select>')
+          s = s.replace("const themes=['sakura','rose','lavender','sky','mint','peach','berry','latte','frappe','macchiato','mocha'];", "const themes=['sakura','rose','lavender','sky','mint','peach','berry','latte','frappe','macchiato','mocha','midnight'];")
+          s = re.sub(r"\$\('cursorToggle'\)\.onchange=e=>\{.*?\};", '', s, count=1)
+          s = re.sub(r"document\.documentElement\.dataset\.cursor=.*?;", '', s, count=2)
+          s = re.sub(r"\$\('cursorToggle'\)\.checked=.*?;", '', s, count=1)
+          s = s.replace("$('cursorToggle').checked=document.documentElement.dataset.cursor!=='off';", '')
+          s = re.sub(r"document\.documentElement\.dataset\.cursor=localStorage\.getItem\('cursor'\)\|\|'on';", '', s, count=1)
+
+          # Remove the old canvas background implementation and replace it with a flowing liquid treatment.
+          start = s.index('// Cursor\n')
+          end = s.index('// Init\n', start)
+          new_fx = r'''// Mouse trail + Canvas UI-inspired liquid background
+const trail=$('trailCanvas'),tctx=trail.getContext('2d');
+const fx=$('fx'),fctx=fx.getContext('2d'),ac=$('ambientCanvas'),actx=ac.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=1,tt=0;
+const particles=Array.from({length:110},()=>({x:Math.random(),y:Math.random(),r:.55+Math.random()*2.2,v:.05+Math.random()*.18,p:Math.random()*Math.PI*2}));
+const trailDots=Array.from({length:26},(_,i)=>({x:-100,y:-100,tx:-100,ty:-100,r:2.5+Math.random()*5.5,a:1-i/34,h:Math.random()*360}));
+let mouseX=-100,mouseY=-100;
+addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||e.pointerType==='pen'){mouseX=e.clientX;mouseY=e.clientY}});
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);for(const c of [fx,ac,trail]){c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';c.getContext('2d').setTransform(dpr,0,0,dpr,0,0)}}
+function cssColor(){return getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#ff79a8'}
+function hexRgb(hex){const h=hex.replace('#','');return [parseInt(h.slice(0,2),16)||255,parseInt(h.slice(2,4),16)||121,parseInt(h.slice(4,6),16)||168]}
+function trailLoop(){tctx.clearRect(0,0,W,H);if(document.documentElement.dataset.fx!=='off'&&mouseX>-50){for(let i=0;i<trailDots.length;i++){const d=trailDots[i],lead=i?trailDots[i-1]:d;d.tx=i?lead.x:mouseX;d.ty=i?lead.y:mouseY;d.x+=(d.tx-d.x)*(i?0.42:0.58);d.y+=(d.ty-d.y)*(i?0.42:0.58);const rr=d.r*(1-i*.018);const g=tctx.createRadialGradient(d.x,d.y,0,d.x,d.y,rr*4.5);const [r,gc,b]=hexRgb(cssColor());g.addColorStop(0,`rgba(${r},${gc},${b},${.32*d.a})`);g.addColorStop(.24,`rgba(${r},${gc},${b},${.16*d.a})`);g.addColorStop(1,'rgba(0,0,0,0)');tctx.fillStyle=g;tctx.beginPath();tctx.arc(d.x,d.y,rr*4.5,0,Math.PI*2);tctx.fill();tctx.fillStyle=`rgba(${r},${gc},${b},${.55*d.a})`;tctx.beginPath();tctx.arc(d.x,d.y,rr,0,Math.PI*2);tctx.fill()}}requestAnimationFrame(trailLoop)}
+function draw(){fctx.clearRect(0,0,W,H);actx.clearRect(0,0,W,H);if(document.documentElement.dataset.fx!=='off'){const col=cssColor();fctx.fillStyle=col+'32';particles.forEach(p=>{p.y-=p.v/1000;if(p.y<-.03)p.y=1.03;const x=p.x*W+Math.sin(tt*.00045+p.p)*14,y=p.y*H;fctx.beginPath();fctx.arc(x,y,p.r,0,Math.PI*2);fctx.fill()});
+  // Liquid: broad flowing ribbons, layered like a soft WebGL fluid wash rather than floating orbs.
+  const active=$('page-home')?.classList.contains('active');
+  if(active){const [r,g,b]=hexRgb(col);actx.save();actx.globalCompositeOperation='screen';actx.filter='blur(26px)';
+    for(let band=0;band<5;band++){const base=H*(.42+band*.11),amp=38+band*9,phase=band*1.7;const grad=actx.createLinearGradient(0,base-amp,W,base+amp);grad.addColorStop(0,`rgba(${r},${g},${b},.02)`);grad.addColorStop(.28,`rgba(${r},${g},${b},.12)`);grad.addColorStop(.55,`rgba(${r},${g},${b},.06)`);grad.addColorStop(1,'rgba(0,0,0,0)');actx.fillStyle=grad;actx.beginPath();actx.moveTo(-40,base);for(let x=-40;x<=W+40;x+=34){const y=base+Math.sin(x*.006+tt*.0012+phase)*amp+Math.sin(x*.0028-tt*.0007+phase)*amp*.65;actx.lineTo(x,y)}for(let x=W+40;x>=-40;x-=34){const y=base+34+Math.sin(x*.005+tt*.001+phase+1.2)*amp*.7+Math.sin(x*.0025-tt*.0005)*amp*.35;actx.lineTo(x,y)}actx.closePath();actx.fill()}
+    actx.filter='none';
+    // Cursor-reactive liquid wake, inspired by Canvas UI's pointer-driven Liquid behavior.
+    if(mouseX>-50){const y=mouseY;const grad=actx.createRadialGradient(mouseX,y,0,mouseX,y,Math.min(W,H)*.24);grad.addColorStop(0,`rgba(${r},${g},${b},.16)`);grad.addColorStop(.45,`rgba(${r},${g},${b},.05)`);grad.addColorStop(1,'transparent');actx.fillStyle=grad;actx.beginPath();actx.arc(mouseX,y,Math.min(W,H)*.24,0,Math.PI*2);actx.fill()}
+    actx.restore()}}
+  tt++;requestAnimationFrame(draw)}
+resize();addEventListener('resize',resize);draw();trailLoop();
+'''
+          s = s[:start] + new_fx + s[end:]
+
+          # Remove any leftover initialization of the deleted cursor controls.
+          s = re.sub(r"document\.documentElement\.dataset\.cursor[^;]*;", '', s)
+          s = re.sub(r"\$\('cursorToggle'\)[^;]*;", '', s)
+          s = s.replace("const den=localStorage.getItem('density')||'normal';", "const den=localStorage.getItem('density')||'normal';")
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/apply-ui-revision.yml
+          git commit -m "feat: restore fire mouse trail and refine themes" || exit 0
+          git push origin main
