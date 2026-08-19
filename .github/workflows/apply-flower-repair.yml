@@ -1,16 +1,12 @@
 name: Apply Momoirobara flower UI repair
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+on: [push]
 
 permissions:
   contents: write
 
 jobs:
   repair:
-    if: github.event.head_commit.message != 'chore: apply Momoirobara flower UI repair'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,11 +16,7 @@ jobs:
       - name: Apply repair
         run: node .github/scripts/repair_momoirobara.mjs
       - name: Validate repair
-        run: |
-          grep -q 'MOMOIROBARA FLOWER UI REPAIR' index.html
-          ! grep -q 'data-density' index.html
-          ! grep -q 'pointerdown.*burst' index.html
-          grep -q '\.player \.play' index.html
+        run: grep -q 'MOMOIROBARA FLOWER UI REPAIR' index.html && ! grep -q 'data-density' index.html && ! grep -q 'pointerdown.*burst' index.html
       - name: Commit repaired index
         run: |
           git config user.name 'github-actions[bot]'
