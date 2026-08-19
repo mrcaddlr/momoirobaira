@@ -20,7 +20,7 @@ if (!s.includes('MOMOIROBARA TARGETED PLAYER/FLOWER CLEANUP')) {
   s = s.replace(/<\/style>/i, targeted + '\n</style>');
 }
 
-// Remove the old V5/V7/V8 decorative elements that create the flower row.
+// Remove the old decorative scripts that create the flower row.
 s = s.replace(/<script id="momo-flower-ui-v5">[\s\S]*?<\/script>/i, '');
 s = s.replace(/<script id="momo-botanical-ui-v7">[\s\S]*?<\/script>/i, '');
 s = s.replace(/<script id="momo-botanical-ui-v8">[\s\S]*?<\/script>/i, '');
