@@ -1,0 +1,48 @@
+name: apply-ui-revision
+on:
+  push:
+    paths:
+      - '.github/workflows/ui-revision.yml'
+permissions:
+  contents: write
+jobs:
+  revise:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply UI revision
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          # Actual Catppuccin palettes
+          s=s.replace(':root[data-theme="latte"]{--a:#b98258;--b:#e3b58d;--bg:#fbf7f1;--text:#46382e;--muted:#9c8c7c;--border:#e9ded2;--track:#f1e8df}', ':root[data-theme="latte"]{--a:#8839ef;--b:#ea76cb;--bg:#eff1f5;--text:#4c4f69;--muted:#8c8fa1;--border:#ccd0da;--track:#e6e9ef}')
+          s=s.replace(':root[data-theme="frappe"]{--a:#8d78c8;--b:#c7b1e8;--bg:#f8f7fb;--text:#363344;--muted:#8d899c;--border:#e1dfeb;--track:#eceaf2}', ':root[data-theme="frappe"]{--a:#ca9ee6;--b:#f4b8e4;--bg:#303446;--text:#c6d0f5;--muted:#a5adce;--border:#51576d;--track:#414559}')
+          s=s.replace(':root[data-theme="macchiato"]{--a:#c68a65;--b:#e4b493;--bg:#faf8f5;--text:#40362f;--muted:#97887e;--border:#e6ddd5;--track:#eee8e2}', ':root[data-theme="macchiato"]{--a:#c6a0f6;--b:#f5bde6;--bg:#24273a;--text:#cad3f5;--muted:#a5adcb;--border:#494d64;--track:#363a4f}')
+          s=s.replace(':root[data-theme="mocha"]{--a:#b77b91;--b:#d4a0aa;--bg:#f7f3f1;--text:#3e3030;--muted:#978484;--border:#e5d9d8;--track:#eee5e4}', ':root[data-theme="mocha"]{--a:#cba6f7;--b:#f5c2e7;--bg:#1e1e2e;--text:#cdd6f4;--muted:#a6adc8;--border:#45475a;--track:#313244}')
+          s=s.replace(':root[data-theme="mocha"]{', ':root[data-theme="midnight"]{--a:#8ab4ff;--b:#b59cff;--bg:#090b14;--card:rgba(15,18,30,.86);--solid:#101421;--text:#e8ecff;--muted:#8d96b2;--border:#252b40;--track:#191f31}\n:root[data-theme="mocha"]{')
+          # Replace the old single cursor system with a multi-blob trail canvas layer.
+          s=s.replace('body{font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;cursor:auto}', 'body{font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;cursor:auto}')
+          s=s.replace('#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}', '#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}\n#trailCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:10}')
+          # Add a visible liquid background canvas and fire-blob trail before the closing body tag.
+          inject=r'''<canvas id="trailCanvas"></canvas>
+<script>
+(()=>{
+ const c=document.getElementById('trailCanvas'),x=c.getContext('2d'),D=devicePixelRatio||1;let w,h,pts=[];
+ const resize=()=>{w=innerWidth;h=innerHeight;c.width=w*D;c.height=h*D;c.style.width=w+'px';c.style.height=h+'px';x.setTransform(D,0,0,D,0,0)};addEventListener('resize',resize);resize();
+ addEventListener('pointermove',e=>{for(let i=0;i<3;i++)pts.push({x:e.clientX+(Math.random()-.5)*9,y:e.clientY+(Math.random()-.5)*9,r:4+Math.random()*8,a:.32+Math.random()*.34,vx:(Math.random()-.5)*1.2,vy:(Math.random()-.5)*1.2,life:1})});
+ function loop(){x.clearRect(0,0,w,h);let a=getComputedStyle(document.documentElement),col=a.getPropertyValue('--a').trim()||'#ff79a8';for(let i=pts.length-1;i>=0;i--){let p=pts[i];p.life-=.018;p.r*=.994;p.x+=p.vx;p.y+=p.vy;if(p.life<=0){pts.splice(i,1);continue}let g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3.2);g.addColorStop(0,col);g.addColorStop(.22,col);g.addColorStop(1,'transparent');x.globalAlpha=p.life;x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r*3.2,0,Math.PI*2);x.fill()}x.globalAlpha=1;requestAnimationFrame(loop)}loop();
+})();
+</script>'''
+          s=s.replace('</body>',inject+'\n</body>')
+          p.write_text(s)
+      - name: Commit revision and remove workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Improve mouse trail, background, and themes' || true
+          git rm .github/workflows/ui-revision.yml
+          git commit -m 'Remove temporary UI revision workflow' || true
+          git push
