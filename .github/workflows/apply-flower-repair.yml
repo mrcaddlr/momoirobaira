@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   repair:
-    if: github.event.head_commit.message != 'chore: apply Momoirobara flower UI repair'
+    if: ${{ github.event.head_commit.message != 'chore: apply Momoirobara flower UI repair' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,16 +21,7 @@ jobs:
         run: node .github/scripts/repair_momoirobara.mjs
 
       - name: Validate repaired UI
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          const s = fs.readFileSync('index.html', 'utf8');
-          if (!s.includes('MOMOIROBARA FLOWER UI REPAIR')) throw new Error('flower repair missing');
-          if (s.includes('data-density')) throw new Error('density styling still present');
-          if (s.includes("document.addEventListener('pointerdown',burst")) throw new Error('global burst handler still present');
-          if (!s.includes('.player .play')) throw new Error('play button styling missing');
-          console.log('repair validation passed');
-          NODE
+        run: node -e "const fs=require('fs'); const s=fs.readFileSync('index.html','utf8'); if(!s.includes('MOMOIROBARA FLOWER UI REPAIR')) throw new Error('flower repair missing'); if(s.includes('data-density')) throw new Error('density styling still present'); if(s.includes(\"document.addEventListener('pointerdown',burst\")) throw new Error('global burst handler still present'); if(!s.includes('.player .play')) throw new Error('play button styling missing'); console.log('repair validation passed');"
 
       - name: Commit repaired UI
         run: |
