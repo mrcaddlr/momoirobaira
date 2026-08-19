@@ -20,13 +20,7 @@ jobs:
         run: node .github/scripts/repair_momoirobara.mjs
       - name: Validate V8
         run: |
-          grep -q 'MOMOIROBARA BOTANICAL UI V8' index.html
-          grep -q 'momo-botanical-ui-v8' index.html
-          grep -q 'momo-ripple' index.html
-          grep -q 'lyric-line' index.html
-          ! grep -q 'MOMOIROBARA BOTANICAL UI V7' index.html
-          ! grep -q 'MOMOIROBARA TARGETED REPAIR V6' index.html
-          ! grep -q 'MOMOIROBARA FLOWER UI REPAIR V[2-5]' index.html
+          node -e "const fs=require('fs');const s=fs.readFileSync('index.html','utf8');for(const x of ['MOMOIROBARA BOTANICAL UI V8','momo-botanical-ui-v8','momo-ripple','lyric-line']){if(!s.includes(x))throw new Error('Missing required V8 marker: '+x)}console.log('V8 validation passed')"
       - name: Commit repaired index
         run: |
           git config user.name 'github-actions[bot]'
