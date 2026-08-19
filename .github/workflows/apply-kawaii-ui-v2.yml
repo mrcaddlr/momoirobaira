@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   apply:
-    if: github.event.head_commit.message != 'feat: apply clean kawaii UI v2'
+    if: "github.event.head_commit.message != 'feat: apply clean kawaii UI v2'"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
