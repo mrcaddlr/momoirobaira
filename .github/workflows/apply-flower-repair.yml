@@ -1,6 +1,7 @@
 name: Apply Momoirobara UI repair
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - '.github/scripts/repair_momoirobara.mjs'
