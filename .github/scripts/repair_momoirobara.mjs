@@ -1,30 +1,14 @@
 import fs from 'node:fs';
 
-const indexPath = 'index.html';
-let html = fs.readFileSync(indexPath, 'utf8');
-
-function removeLiteral(value) {
-  let at = html.indexOf(value);
-  while (at !== -1) {
-    html = html.slice(0, at) + html.slice(at + value.length);
-    at = html.indexOf(value);
-  }
-}
-
-removeLiteral('✿❀✽✾❁❋✻✼');
-removeLiteral('❈');
-
-const oldMarkers = ['DIRECT UI REPAIR V2','MOMOIROBARA FLOWER UI REPAIR V5','MOMOIROBARA BOTANICAL UI V7','MOMOIROBARA BOTANICAL UI V8'];
-for (const marker of oldMarkers) removeLiteral('/* ' + marker + ' */');
-
-const cleanupCss = '\n/* MOMOIROBARA INLINE CLEANUP */\n' +
-  '.logo-flower{display:block!important;visibility:visible!important;opacity:1!important}\n' +
-  '.logo-flower .petal,.logo-flower .center{display:block!important}\n' +
-  '.home-hero{display:block!important;visibility:visible!important;opacity:1!important}\n' +
-  '.momo-flower,.momo-flower-field,.momo-field-petal,.momo-floral-mark,.momo-floral-rule{display:none!important}\n';
-
-if (!html.includes('MOMOIROBARA INLINE CLEANUP')) html = html.replace('</style>', cleanupCss + '</style>');
-if (!html.includes('MOMOIROBARA INLINE BUILD')) html = html.replace('</head>', '<meta name="momoirobara-build" content="MOMOIROBARA INLINE BUILD">\n</head>');
-
-fs.writeFileSync(indexPath, html, 'utf8');
-console.log('repair complete');
+const path='index.html';
+let html=fs.readFileSync(path,'utf8');
+const css=`/* MOMOIROBARA DESIGN REFRESH 2026 */
+.home-hero{min-height:230px!important;padding:34px!important;border-radius:28px!important}.home-hero:after{display:none!important}.home-hero:before{content:"";position:absolute;width:280px;height:280px;right:-70px;top:-90px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--a) 17%,transparent),transparent 68%);pointer-events:none}.hero-art{position:absolute;right:34px;top:30px;width:170px;height:170px;border-radius:28px;overflow:hidden;box-shadow:0 14px 36px rgba(112,76,132,.12)}.hero-art img{width:100%;height:100%;object-fit:cover}.shuffle-btn{display:inline-flex;align-items:center;gap:7px}.shuffle-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.momo-density-hidden{display:none!important}#momoMenuClose{position:fixed;right:18px;top:18px;width:38px;height:38px;display:none;place-items:center;z-index:10050;border:1px solid var(--border);border-radius:12px;background:var(--solid);color:var(--text);box-shadow:0 5px 16px rgba(112,76,132,.1)}#momoMenuClose svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}.momo-artist-card{border:1px solid var(--border);border-radius:20px;padding:12px;background:var(--solid);box-shadow:0 5px 16px rgba(112,76,132,.1);transition:transform .2s var(--ease),box-shadow .2s}.momo-artist-card:hover{transform:translateY(-4px)}.momo-artist-card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:15px}.momo-lastfm-card{max-width:720px;padding:24px;border:1px solid var(--border);border-radius:24px;background:var(--solid);box-shadow:0 14px 36px rgba(112,76,132,.12)}.momo-lastfm-card input{width:100%;margin-top:7px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text)}.logo-flower{display:block!important;visibility:visible!important;opacity:1!important}.logo-flower .petal,.logo-flower .center{display:block!important}
+#progress::-webkit-slider-runnable-track,#progressBar::-webkit-slider-runnable-track,.progress input[type=range]::-webkit-slider-runnable-track,.player input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(90deg,var(--a),var(--b))!important}#progress::-webkit-slider-thumb,#progressBar::-webkit-slider-thumb,.progress input[type=range]::-webkit-slider-thumb,.player input[type=range]::-webkit-slider-thumb{width:14px!important;height:14px!important;margin-top:-4.5px!important;border:3px solid var(--solid)!important;border-radius:50%!important;background:var(--a)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--a) 18%,transparent),0 3px 10px color-mix(in srgb,var(--a) 25%,transparent)!important}
+`;
+const js=`(()=>{const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];const density=()=>$$('label,span,p,div').forEach(e=>{const t=(e.textContent||'').trim().toLowerCase();if(t==='interface density'||t==='density'){const r=e.closest('.setting,.setting-row,.setting-item,.control-row,.settings-row')||e.parentElement;if(r)r.classList.add('momo-density-hidden')}});const shuffle=()=>$$('.page').forEach(p=>{const t=(p.querySelector('h1,h2')?.textContent||'').toLowerCase(),s=p.querySelector('.songs');if(!s||!/(playlist|all music|favorites|favourite)/.test(t)||p.querySelector('.shuffle-btn'))return;const w=document.createElement('div');w.className='song-list-toolbar';w.innerHTML='<button class="tool shuffle-btn" type="button"><svg viewBox="0 0 24 24"><path d="M3 7h3c4 0 5 10 9 10h6"/><path d="m18 14 3 3-3 3"/><path d="M3 17h3c1.4 0 2.4-.9 3.2-2.1"/><path d="M15 7c1.2-1.1 2-1.9 3-1.9h3"/><path d="m18 2 3 3-3 3"/></svg>Shuffle</button>';s.parentElement.insertBefore(w,s);w.firstChild.onclick=()=>{const a=[...s.children];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));s.append(a[j],a[i])}}});const menu=()=>{const side=$('.side');if(!side)return;let b=$('#momoMenuClose');if(!b){b=document.createElement('button');b.id='momoMenuClose';b.type='button';b.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';document.body.append(b)}const sync=()=>{const open=side.classList.contains('open')||side.classList.contains('show')||side.classList.contains('active');b.style.display=innerWidth<=900&&open?'grid':'none'};b.onclick=e=>{e.preventDefault();e.stopPropagation();side.classList.remove('open','show','active');sync()};if(!side.dataset.momoObserved){new MutationObserver(sync).observe(side,{attributes:true,attributeFilter:['class']});side.dataset.momoObserved='1'}addEventListener('resize',sync);sync()};const settings=()=>$$('[aria-label="Settings"],[title="Settings"],.settings-btn,.settings-button').forEach(b=>{const s=b.querySelector('svg');if(s)s.innerHTML='<path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z"/><path d="m19.1 13.5 1.2.9-1.8 3.1-1.4-.6a7.2 7.2 0 0 1-1.6.9l-.2 1.5h-3.6l-.2-1.5a7.2 7.2 0 0 1-1.6-.9l-1.4.6-1.8 3.1-1.2-.9a7 7 0 0 1 0-1.9l-1.2-.9 1.8-3.1 1.4.6a7.2 7.2 0 0 1 1.6-.9l.2-1.5h3.6l.2 1.5a7.2 7.2 0 0 1 1.6.9l1.4-.6 1.8.3-1.2-.9a7 7 0 0 1 0-1.9Z"/>'});const press=()=>{if(document.body.dataset.momoPress)return;document.body.dataset.momoPress='1';document.addEventListener('pointerdown',e=>{const b=e.target.closest('button,.tool,.icon-btn,.nav button,.side-action');if(!b)return;b.animate([{transform:'scale(1)'},{transform:'scale(.95)'},{transform:'scale(1.02)'},{transform:'scale(1)'}],{duration:220,easing:'cubic-bezier(.2,.8,.2,1)'})},{passive:true})};const init=()=>{density();shuffle();menu();settings();press()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();new MutationObserver(init).observe(document.body,{childList:true,subtree:true})})();`;
+if(!html.includes('MOMOIROBARA DESIGN REFRESH 2026'))html=html.replace('</style>',css+'</style>');
+if(!html.includes('momo-inline-ui-2026'))html=html.replace('</body>','<script id="momo-inline-ui-2026">'+js+'</script></body>');
+html=html.replace(/<script\s+src=["']enhancements\.js["'][^>]*>\s*<\/script>/gi,'');
+fs.writeFileSync(path,html,'utf8');
+console.log('direct index design refresh applied');
