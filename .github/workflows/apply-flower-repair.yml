@@ -26,7 +26,8 @@ jobs:
           grep -q 'MOMOIROBARA CLEAN FEATURE HOOKS' index.html
           grep -q 'enhancements.js' index.html
           if grep -q '❈' index.html; then echo '❈ is still present'; exit 1; fi
-          if grep -q 'DIRECT UI REPAIR V2' index.html; then echo 'old repair layer is still present'; exit 1; fi
+          if grep -q 'logo-flower{display:none' index.html; then echo 'logo flower is still being hidden'; exit 1; fi
+          if grep -q 'interface-density' index.html; then echo 'interface density marker is still present'; exit 1; fi
           echo 'Targeted repair validation passed'
       - name: Commit repaired index
         run: |
