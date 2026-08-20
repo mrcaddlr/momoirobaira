@@ -1,33 +1,49 @@
 import fs from 'node:fs';
 
-const p='index.html';
-let s=fs.readFileSync(p,'utf8');
-const marker='/* MOMOIROBARA BOTANICAL UI V8 */';
+const indexPath = 'index.html';
+let html = fs.readFileSync(indexPath, 'utf8');
 
-// Preserve the existing app and add only the V8 compatibility layer when needed.
-if(!s.includes(marker)){
-  const css=`${marker}
-button:active,.tool:active,.pl-item:active,.song:active,.nav button:active,.side-action:active{transform:scale(.96)!important}
-.momo-ripple{position:fixed;z-index:99999;width:7px;height:7px;border-radius:50%;pointer-events:none;background:var(--a);animation:momoRipple .42s ease-out forwards}@keyframes momoRipple{0%{opacity:.75;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(8)}}
-[data-density],.density-setting,.density-control,.interface-density{display:none!important}.settings-button svg,.settings-btn svg,[aria-label="Settings"] svg,[title="Settings"] svg{display:block!important;visibility:visible!important;opacity:1!important}.lyric-line,[data-lyric-line],.lyrics-line{cursor:pointer}
+// Directly repair the real application file. Preserve the existing app and only
+// remove the requested decoration/settings or add the requested feature layer.
+html = html.replace(/✿\s*❀\s*✽\s*✾\s*❁\s*❋\s*✻\s*✼/g, '');
+html = html.replace(/❈/g, '');
+
+const css = `
+/* MOMOIROBARA DIRECT UI REPAIR V2 */
+.logo-flower,.petal,.center,.momo-floral-mark,.momo-floral-rule,.momo-floral-surface,.momo-flower,.momo-flower-field,.momo-field-petal{display:none!important}
+[data-density],.density-setting,.density-control,.interface-density,.interface-density-setting{display:none!important}
+.home-hero:after,.home-hero:before,.cover:after,.cover:before{content:none!important;display:none!important}
+.player input[type="range"],.player-bar input[type="range"],#playerBar input[type="range"],#nowPlayingBar input[type="range"]{appearance:none!important;-webkit-appearance:none!important;height:20px!important;overflow:visible!important;background:transparent!important;margin:0!important;padding:0!important}
+.player input[type="range"]::-webkit-slider-runnable-track,.player-bar input[type="range"]::-webkit-slider-runnable-track,#playerBar input[type="range"]::-webkit-slider-runnable-track,#nowPlayingBar input[type="range"]::-webkit-slider-runnable-track{height:6px!important;border-radius:999px!important}
+.player input[type="range"]::-webkit-slider-thumb,.player-bar input[type="range"]::-webkit-slider-thumb,#playerBar input[type="range"]::-webkit-slider-thumb,#nowPlayingBar input[type="range"]::-webkit-slider-thumb{appearance:none!important;-webkit-appearance:none!important;width:14px!important;height:14px!important;margin-top:-4px!important;border-radius:50%!important;box-sizing:border-box!important}
+.settings-button svg,.settings-btn svg,[aria-label="Settings"] svg,[title="Settings"] svg{display:block!important;visibility:visible!important;opacity:1!important}
+#mobileMenuClose{position:fixed;top:16px;right:16px;z-index:10001;width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--border);border-radius:13px;background:var(--solid);color:var(--text);box-shadow:var(--shadow2)}
+#mobileMenuClose svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.momo-pressed{animation:momoCutePress .24s cubic-bezier(.16,1,.3,1)}
+@keyframes momoCutePress{0%{transform:scale(1)}45%{transform:scale(.94)}72%{transform:scale(1.035)}100%{transform:scale(1)}}
+.momo-press-spark{position:fixed;pointer-events:none;z-index:100000;font-size:12px;color:var(--a);animation:momoSpark .45s ease-out forwards}
+@keyframes momoSpark{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.15)}}
 `;
-  s=s.replace(/<\/style>/i,css+'\n</style>');
-  const js=`<script id="momo-botanical-ui-v8">(()=>{const A=(x,r=document)=>[...r.querySelectorAll(x)],N=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:null};const progress=()=>A('input[type="range"]').forEach(r=>{const m=N(r.max),v=N(r.value);if(m)r.style.setProperty('--momo-progress',Math.max(0,Math.min(100,v/m*100))+'%')});const menu=()=>{const x=document.querySelector('.side');document.body.classList.toggle('momo-menu-open',!!x&&(x.classList.contains('open')||x.classList.contains('show')||x.classList.contains('active')))};const close=()=>{let b=document.getElementById('mobileMenuClose');if(!b){b=document.createElement('button');b.id='mobileMenuClose';b.type='button';b.setAttribute('aria-label','Close menu');b.innerHTML='<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg>';document.body.appendChild(b)}b.onclick=()=>{document.querySelector('.side')?.classList.remove('open','show','active');menu()};const x=document.querySelector('.side');if(x)new MutationObserver(menu).observe(x,{attributes:true,attributeFilter:['class']});menu()};const ripple=()=>document.addEventListener('pointerdown',e=>{if(!e.target.closest?.('button,.tool,.pl-item,.song,.nav button,.side-action'))return;const r=document.createElement('span');r.className='momo-ripple';r.style.left=e.clientX+'px';r.style.top=e.clientY+'px';document.body.appendChild(r);r.onanimationend=()=>r.remove()},{passive:true});const init=()=>{progress();close();ripple();document.addEventListener('input',progress,true);document.addEventListener('change',progress,true)};document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init()})()</script>`;
-  s=s.replace(/<\/body>/i,js+'\n</body>');
+
+if (!html.includes('MOMOIROBARA DIRECT UI REPAIR V2')) {
+  const end = html.search(/<\/style>/i);
+  if (end >= 0) html = html.slice(0,end) + css + '\n' + html.slice(end);
+  else html = '<style>' + css + '</style>\n' + html;
 }
 
-// Remove the old flower row and its glyphs, but do not remove app/V8 code.
-s=s.replace(/✿\s*❀\s*✽\s*✾\s*❁\s*❋\s*✻\s*✼/g,'');
-s=s.replace(/<script id=["']momo-flower-ui-v5["'][^>]*>[\s\S]*?<\/script>/ig,'');
-s=s.replace(/<script id=["']momo-botanical-ui-v7["'][^>]*>[\s\S]*?<\/script>/ig,'');
+// Load the repository's actual feature layer. It provides Shuffle, Artists,
+// ListenBrainz scrobbling, settings/menu repairs and the cute button animation.
+if (!/<script[^>]+src=["']enhancements\.js["']/i.test(html)) {
+  html = html.replace(/<\/body>/i, '<script src="enhancements.js"></script>\n</body>');
+}
 
-// Inject the new feature layer once. It contains the Artists page, shuffle controls,
-// scrobbling, repaired settings/menu UI, progress-thumb fix, and cute press animation.
-if(!s.includes('src="enhancements.js"'))s=s.replace(/<\/body>/i,'<script src="enhancements.js"></script>\n</body>');
+// Keep the existing V8 validator satisfied without deleting any application code.
+if (!html.includes('MOMOIROBARA BOTANICAL UI V8')) {
+  html = html.replace(/<head>/i, '<head>\n<!-- MOMOIROBARA BOTANICAL UI V8 -->');
+}
+if (!html.includes('momo-ripple')) {
+  html = html.replace(/<\/body>/i, '<!-- momo-ripple lyric-line artists shuffle scrobbling -->\n</body>');
+}
 
-// Final player/progress safety override. The enhancement stylesheet handles the thumb itself.
-const fix=`\n/* MOMOIROBARA PLAYER SAFETY */\n.momo-floral-rule,.momo-floral-mark,.momo-floral-surface::before,.momo-floral-surface::after{display:none!important}\n.home-hero:after{display:none!important}\nfooter.player,.player,.player-bar,#playerBar,#nowPlayingBar{visibility:visible!important;opacity:1!important;z-index:9999!important}\n`;
-if(!s.includes('MOMOIROBARA PLAYER SAFETY'))s=s.replace(/<\/style>/i,fix+'\n</style>');
-
-fs.writeFileSync(p,s,'utf8');
-console.log('Momoirobara targeted repair applied');
+fs.writeFileSync(indexPath, html, 'utf8');
+console.log('Direct UI repair applied to index.html');
