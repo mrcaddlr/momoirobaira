@@ -1,0 +1,31 @@
+name: Apply Momoirobara UI polish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply UI patch
+        run: python3 .github/momoirobara_ui_patch.py
+
+      - name: Commit UI patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git add index.html
+          git commit -m "Polish animated background and smooth synced lyrics"
+          git push
