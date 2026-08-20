@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/apply-flower-repair.yml'
       - '.github/scripts/repair_momoirobara.mjs'
+      - 'enhancements.js'
 
 permissions:
   contents: write
@@ -18,14 +19,18 @@ jobs:
       - uses: actions/checkout@v5
       - name: Run repair script
         run: node .github/scripts/repair_momoirobara.mjs
-      - name: Validate V8
+      - name: Validate repaired HTML
         run: |
-          node -e "const fs=require('fs');const s=fs.readFileSync('index.html','utf8');for(const x of ['MOMOIROBARA BOTANICAL UI V8','momo-botanical-ui-v8','momo-ripple','lyric-line']){if(!s.includes(x))throw new Error('Missing required V8 marker: '+x)}console.log('V8 validation passed')"
+          node --check .github/scripts/repair_momoirobara.mjs
+          test -s index.html
+          grep -q 'MOMOIROBARA DIRECT FIXES' index.html
+          if grep -q '❈' index.html; then echo '❈ is still present'; exit 1; fi
+          echo 'Targeted repair validation passed'
       - name: Commit repaired index
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'chore: apply Momoirobara V8 repair'
+          if git diff --cached --quiet; then echo 'No index changes'; exit 0; fi
+          git commit -m 'fix: apply Momoirobara UI repairs'
           git push origin main
