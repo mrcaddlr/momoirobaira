@@ -1,60 +1,57 @@
 import fs from 'node:fs';
 
-const path = 'index.html';
-let html = fs.readFileSync(path, 'utf8');
+const INDEX = 'index.html';
+const EXTERNAL = 'enhancements.js';
+let html = fs.readFileSync(INDEX, 'utf8');
+
+if (fs.existsSync(EXTERNAL)) {
+  const feature = fs.readFileSync(EXTERNAL, 'utf8').trim();
+  html = html.replace(/<script\s+[^>]*src=["']enhancements\.js["'][^>]*>\s*<\/script>/gi, '');
+  html = html.replace(/<script\s+id=["']momo-inline-features["'][\s\S]*?<\/script>/gi, '');
+  if (feature) html = html.replace(/<\/body>/i, `<script id="momo-inline-features">\n${feature}\n</script>\n</body>`);
+}
 
 html = html.replace(/✿\s*❀\s*✽\s*✾\s*❁\s*❋\s*✻\s*✼/g, '');
 html = html.replace(/❈/g, '');
 
-const oldMarkers = [
-  'DIRECT UI REPAIR V2',
-  'MOMOIROBARA FLOWER UI REPAIR V5',
-  'MOMOIROBARA BOTANICAL UI V7',
-  'MOMOIROBARA BOTANICAL UI V8',
-  'MOMOIROBARA TARGETED PLAYER/FLOWER CLEANUP',
-  'MOMOIROBARA FINAL DIRECT FIX',
-  'MOMOIROBARA PLAYER SAFETY'
+const staleMarkers = [
+  'DIRECT UI REPAIR V2', 'MOMOIROBARA FLOWER UI REPAIR V5',
+  'MOMOIROBARA BOTANICAL UI V7', 'MOMOIROBARA BOTANICAL UI V8',
+  'MOMOIROBARA TARGETED PLAYER/FLOWER CLEANUP', 'MOMOIROBARA FINAL DIRECT FIX',
+  'MOMOIROBARA PLAYER SAFETY', 'MOMOIROBARA DIRECT FIXES', 'MOMOIROBARA FEATURES V4'
 ];
-for (const marker of oldMarkers) {
-  const comment = `/* ${marker} */`;
-  while (html.includes(comment)) {
-    const start = html.indexOf(comment);
-    const end = html.indexOf('</style>', start);
-    if (end === -1) {
-      html = html.replace(comment, '');
-      break;
-    }
-    html = html.slice(0, start) + html.slice(end);
+for (const marker of staleMarkers) {
+  const needle = `/* ${marker} */`;
+  let at = html.indexOf(needle);
+  while (at !== -1) {
+    const end = html.indexOf('</style>', at);
+    if (end === -1) { html = html.replace(needle, ''); break; }
+    html = html.slice(0, at) + html.slice(end + 8);
+    at = html.indexOf(needle);
   }
 }
 
 for (const id of ['momo-botanical-ui-v7', 'momo-botanical-ui-v8', 'momo-final-menu', 'momo-safe-repair']) {
-  const open = `<script id="${id}"`;
-  while (html.includes(open)) {
-    const start = html.indexOf(open);
-    const end = html.indexOf('</script>', start);
-    if (end === -1) break;
-    html = html.slice(0, start) + html.slice(end + 9);
-  }
+  const open = new RegExp(`<script[^>]*id=["']${id}["'][^>]*>`, 'i').exec(html);
+  if (!open) continue;
+  const end = html.indexOf('</script>', open.index + open[0].length);
+  if (end !== -1) html = html.slice(0, open.index) + html.slice(end + 9);
 }
 
 const css = `
-/* MOMOIROBARA CLEAN FEATURE HOOKS */
+/* MOMOIROBARA FINAL INLINE CLEANUP */
 .logo-flower{display:block!important;visibility:visible!important;opacity:1!important}
 .logo-flower .petal,.logo-flower .center{display:block!important}
-.home-hero{display:block!important;visibility:visible!important;opacity:1!important}
+.home-hero{display:block!important;visibility:visible!important;opacity:1!important;min-height:250px!important}
+.home-hero:after{pointer-events:none!important}
 .momo-flower,.momo-flower-field,.momo-field-petal,.momo-floral-mark,.momo-floral-rule{display:none!important}
 [data-density],.density-setting,.density-control,.interface-density,.interface-density-setting,.setting-density,.density-row,.interface-density-row{display:none!important}
-.player input[type=range],.player-bar input[type=range],#playerBar input[type=range],#nowPlayingBar input[type=range]{overflow:visible!important;clip-path:none!important}
 `;
-if (!html.includes('MOMOIROBARA CLEAN FEATURE HOOKS')) {
-  const end = html.search(/<\/style>/i);
-  html = end >= 0 ? html.slice(0, end) + css + '\n' + html.slice(end) : css + '\n' + html;
-}
+if (!html.includes('MOMOIROBARA FINAL INLINE CLEANUP')) html = html.replace(/<\/style>/i, `${css}\n</style>`);
 
-// Always normalize the feature entrypoint so index.html itself is updated by the workflow.
-html = html.replace(/\s*<script[^>]+src=["']enhancements\.js["'][^>]*><\/script>/gi, '');
-html = html.replace(/<\/body>/i, '<script src="enhancements.js"></script>\n<!-- momoirobara-feature-build-2026-08-20-v4 -->\n</body>');
+html = html.replace(/<script\s+[^>]*src=["']enhancements\.js["'][^>]*>\s*<\/script>/gi, '');
+if (!html.includes('MOMOIROBARA INLINE BUILD')) html = html.replace(/<\/head>/i, '<meta name="momoirobara-build" content="MOMOIROBARA INLINE BUILD">\n</head>');
 
-fs.writeFileSync(path, html, 'utf8');
-console.log('Momoirobara direct index repair applied');
+fs.writeFileSync(INDEX, html, 'utf8');
+if (fs.existsSync(EXTERNAL)) fs.rmSync(EXTERNAL);
+console.log('Momoirobara features inlined into index.html; enhancements.js removed.');
