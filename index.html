@@ -24,40 +24,7 @@
 
 
 
-/* MOMOIROBARA FLOWER UI REPAIR V5 */
-#momoCanvasUI{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;opacity:.46}
-button,.tool,.pl-item,.song,.nav button,.side-action,.primary,.secondary,.icon-btn{transform-origin:center}
-button:active,.tool:active,.pl-item:active,.song:active,.nav button:active,.side-action:active,.primary:active,.secondary:active,.icon-btn:active{transform:scale(.94)!important;transition:transform .08s ease!important}
-.momo-ripple{position:fixed;z-index:99999;width:8px;height:8px;border-radius:50%;pointer-events:none;background:color-mix(in srgb,var(--a) 70%,#fff);box-shadow:0 0 18px color-mix(in srgb,var(--a) 45%,transparent);animation:momoRipple .48s ease-out forwards}
-@keyframes momoRipple{0%{opacity:.9;transform:translate(-50%,-50%) scale(.5)}65%{opacity:.35;transform:translate(-50%,-50%) scale(7)}100%{opacity:0;transform:translate(-50%,-50%) scale(10)}}
-.logo,.home-hero,.head,.library-top,.song,.player,.player-bar,.now-playing,.side-action,.tool,.nav button,.pl-item,.settings-card,.setting,.setting-row,.setting-item,.card,.panel{position:relative}
-.logo:before,.home-hero:before,.head:before,.library-top:before,.song:before,.player:before,.player-bar:before,.side-action:before,.tool:before,.nav button:before,.pl-item:before,.settings-card:before,.setting:before,.setting-row:before,.setting-item:before,.card:before,.panel:before{content:'✿';position:absolute;pointer-events:none;color:var(--a);font-size:11px;line-height:1;opacity:.42;animation:momoPetal 4.5s ease-in-out infinite}
-.logo:before{right:9px;top:8px}.home-hero:before{right:25px;top:20px;font-size:24px}.head:before{right:5px;top:-3px}.library-top:before{right:0;top:0;font-size:18px}.song:before{right:48px;top:7px;font-size:9px}.player:before,.player-bar:before{left:8px;top:8px}.side-action:before{right:8px;top:7px}.tool:before{right:5px;top:4px;font-size:8px}.nav button:before,.pl-item:before{right:7px;top:6px;font-size:8px}.settings-card:before,.setting:before,.setting-row:before,.setting-item:before{right:9px;top:8px}.card:before,.panel:before{right:10px;top:9px}
-@keyframes momoPetal{0%,100%{transform:translateY(0) rotate(-10deg);opacity:.28}50%{transform:translateY(-4px) rotate(10deg);opacity:.68}}
-.home-hero:after{content:'❀  ✿  ❁';position:absolute;left:24px;bottom:16px;color:color-mix(in srgb,var(--a) 52%,transparent);font-size:17px;letter-spacing:14px;opacity:.48;animation:momoGarden 7s ease-in-out infinite}
-@keyframes momoGarden{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-#mobileMenuClose{display:none!important;position:fixed!important;z-index:10001;width:34px;height:34px;place-items:center;border:1px solid var(--border);border-radius:50%;background:var(--solid);color:var(--muted);box-shadow:var(--shadow2)}
-body.momo-menu-open #mobileMenuClose{display:grid!important}
-#mobileMenuClose svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-.player input[type=range],.player-bar input[type=range],.progress input[type=range]{--momo-progress:0%;background:linear-gradient(90deg,var(--a),var(--b) var(--momo-progress),var(--track) var(--momo-progress),var(--track))!important;border:0!important;accent-color:var(--a)!important}
-.player input[type=range]::-webkit-slider-runnable-track,.player-bar input[type=range]::-webkit-slider-runnable-track,.progress input[type=range]::-webkit-slider-runnable-track{height:6px;border:0;border-radius:999px;background:transparent!important}
-.player input[type=range]::-moz-range-track,.player-bar input[type=range]::-moz-range-track,.progress input[type=range]::-moz-range-track{height:6px;border:0;border-radius:999px;background:transparent!important}
-.player input[type=range]::-moz-range-progress,.player-bar input[type=range]::-moz-range-progress,.progress input[type=range]::-moz-range-progress{height:6px;border-radius:999px;background:linear-gradient(90deg,var(--a),var(--b))!important}
-[data-density],.density-setting,.density-control,.interface-density{display:none!important}.nav button.active:after{display:none!important}
-.momo-settings-icon{display:grid!important;place-items:center;width:30px;height:30px;border-radius:10px;background:var(--bg);border:1px solid var(--border);color:var(--a)}
-.momo-settings-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.lyric-line,[data-lyric-line],.lyrics-line,[class*="lyric"] [data-time]{cursor:pointer;transition:color .18s ease,transform .18s ease}
-.lyric-line:hover,[data-lyric-line]:hover,.lyrics-line:hover,[class*="lyric"] [data-time]:hover{transform:translateX(4px);color:var(--a)!important}
 
-/* MOMOIROBARA BOTANICAL UI V7 */
-.momo-botanical{position:relative}.momo-botanical::before{content:"";position:absolute;inset:7px;border:1px solid color-mix(in srgb,var(--a) 24%,transparent);border-radius:inherit;pointer-events:none}.momo-vine{position:absolute;pointer-events:none;z-index:0;width:72px;height:72px;opacity:.34}.momo-vine svg{width:100%;height:100%;overflow:visible;fill:none;stroke:var(--a);stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}.momo-vine path{stroke-dasharray:120;stroke-dashoffset:120;animation:momoVineDraw 2.4s ease forwards,momoVineSway 5s ease-in-out 2.4s infinite}.momo-vine .petal{fill:var(--a);stroke:none;transform-origin:center;animation:momoPetalPulse 4s ease-in-out infinite}@keyframes momoVineDraw{to{stroke-dashoffset:0}}@keyframes momoVineSway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(2deg)}}@keyframes momoPetalPulse{0%,100%{opacity:.35;transform:scale(.9)}50%{opacity:.75;transform:scale(1.08)}}.momo-floral-divider{height:18px;display:flex;align-items:center;gap:8px;color:var(--a);opacity:.5;pointer-events:none;overflow:hidden}.momo-floral-divider::before,.momo-floral-divider::after{content:"";height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--a) 35%,transparent));flex:1}.momo-floral-divider span{font-size:12px;animation:momoPetalPulse 3.8s ease-in-out infinite}.momo-flower-field{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}.momo-field-petal{position:absolute;color:var(--a);opacity:.16;font-size:13px;animation:momoFloat 9s ease-in-out infinite}.momo-field-petal:nth-child(2n){animation-duration:12s}.momo-field-petal:nth-child(3n){animation-duration:15s}@keyframes momoFloat{0%,100%{transform:translateY(12px) rotate(0deg);opacity:.08}50%{transform:translateY(-18px) rotate(20deg);opacity:.22}}
-/* MOMOIROBARA BOTANICAL UI V8 */
-button:active,.tool:active,.pl-item:active,.song:active,.nav button:active,.side-action:active{transform:scale(.96)!important;transition:transform .08s ease!important}
-.momo-ripple{position:fixed;z-index:99999;width:7px;height:7px;border-radius:50%;pointer-events:none;background:var(--a);animation:momoRipple .42s ease-out forwards}@keyframes momoRipple{0%{opacity:.75;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(8)}}
-#mobileMenuClose{display:none!important;position:fixed!important;z-index:10001;width:34px;height:34px;place-items:center;border:1px solid var(--border);border-radius:50%;background:var(--solid);color:var(--muted)}body.momo-menu-open #mobileMenuClose{display:grid!important}
-.player input[type=range],.player-bar input[type=range],.progress input[type=range]{--momo-progress:0%;background:linear-gradient(90deg,var(--a),var(--b) var(--momo-progress),var(--track) var(--momo-progress),var(--track))!important;border:0!important}.player input[type=range]::-webkit-slider-runnable-track,.player-bar input[type=range]::-webkit-slider-runnable-track,.progress input[type=range]::-webkit-slider-runnable-track{height:6px;background:transparent!important}
-[data-density],.density-setting,.density-control,.interface-density{display:none!important}.settings-button svg,.settings-btn svg,[aria-label="Settings"] svg,[title="Settings"] svg{display:block!important;visibility:visible!important;opacity:1!important}.lyric-line,[data-lyric-line],.lyrics-line,[class*="lyric"] [data-time]{cursor:pointer}.lyric-line:hover,[data-lyric-line]:hover,.lyrics-line:hover,[class*="lyric"] [data-time]:hover{color:var(--a)!important;transform:translateX(3px)}
-.momo-floral-surface{position:relative;isolation:isolate}.momo-floral-surface::before,.momo-floral-surface::after{content:"";position:absolute;pointer-events:none;z-index:0;width:38px;height:38px;border-color:color-mix(in srgb,var(--a) 42%,transparent);opacity:.55}.momo-floral-surface::before{left:9px;top:9px;border-left:1px solid;border-top:1px solid;border-radius:16px 0 0 0}.momo-floral-surface::after{right:9px;bottom:9px;border-right:1px solid;border-bottom:1px solid;border-radius:0 0 16px 0}.momo-floral-mark{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-right:7px;color:var(--a);font-family:serif;font-size:15px;animation:momoBloom 4s ease-in-out infinite}@keyframes momoBloom{0%,100%{transform:rotate(-7deg) scale(.94)}50%{transform:rotate(7deg) scale(1.06)}}.momo-floral-rule{display:flex;align-items:center;gap:9px;height:16px;margin:4px 0 10px;color:var(--a);opacity:.52;pointer-events:none}.momo-floral-rule::before,.momo-floral-rule::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--a) 42%,transparent))}.momo-floral-rule span{font-family:serif;font-size:13px;animation:momoBloom 4s ease-in-out infinite}
 
 
 /* MOMOIROBARA PLAYER/FLOWER TARGETED FIX */
@@ -65,11 +32,6 @@ button:active,.tool:active,.pl-item:active,.song:active,.nav button:active,.side
 footer.player,.player,.player-bar,#playerBar,#nowPlayingBar{display:grid!important;visibility:visible!important;opacity:1!important;position:fixed!important;left:238px;right:0;bottom:0;z-index:9999!important;transform:none!important;clip-path:none!important;pointer-events:auto!important}
 @media(max-width:900px){footer.player,.player,.player-bar,#playerBar,#nowPlayingBar{left:0!important;right:0!important}}
 
-
-/* MOMOIROBARA PLAYER SAFETY */
-.momo-floral-rule,.momo-floral-mark,.momo-floral-surface::before,.momo-floral-surface::after{display:none!important}
-.home-hero:after{display:none!important}
-footer.player,.player,.player-bar,#playerBar,#nowPlayingBar{visibility:visible!important;opacity:1!important;z-index:9999!important}
 
 
 /* MOMOIROBARA DIRECT UI REPAIR V2 */
@@ -148,24 +110,18 @@ footer.player,.player,.player-bar,#playerBar,#nowPlayingBar{visibility:visible!i
 .momo-safe-pressed{animation:momoSafePress .22s cubic-bezier(.16,1,.3,1)}@keyframes momoSafePress{0%{transform:scale(1)}45%{transform:scale(.94)}75%{transform:scale(1.035)}100%{transform:scale(1)}}
 
 
-/* MOMOIROBARA FINAL DIRECT FIX */
+
+
+/* MOMOIROBARA CLEAN FEATURE HOOKS */
 .logo-flower{display:block!important;visibility:visible!important;opacity:1!important}
 .logo-flower .petal,.logo-flower .center{display:block!important}
+.home-hero{display:block!important;visibility:visible!important;opacity:1!important}
 .momo-flower,.momo-flower-field,.momo-field-petal,.momo-floral-mark,.momo-floral-rule{display:none!important}
-.song:before,.nav button:before,.pl-item:before,.side-action:before,.tool:before,.head:before,.library-top:before,.player:before,.player-bar:before{content:none!important;display:none!important}
-.home-hero:before{content:none!important}
 [data-density],.density-setting,.density-control,.interface-density,.interface-density-setting,.setting-density,.density-row,.interface-density-row{display:none!important}
-.player input[type=range],.player-bar input[type=range],#playerBar input[type=range],#nowPlayingBar input[type=range]{appearance:none!important;-webkit-appearance:none!important;height:20px!important;overflow:visible!important;clip-path:none!important;background:transparent!important;margin:0!important;padding:0!important}
-.player input[type=range]::-webkit-slider-thumb,.player-bar input[type=range]::-webkit-slider-thumb,#playerBar input[type=range]::-webkit-slider-thumb,#nowPlayingBar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none!important;width:14px!important;height:14px!important;margin-top:-4px!important;border:3px solid var(--solid)!important;border-radius:50%!important;background:var(--a)!important;box-sizing:border-box!important}
-.player,.player-bar,#playerBar,#nowPlayingBar{visibility:visible!important;opacity:1!important;z-index:9999!important}
-.settings-button,.settings-btn,[aria-label="Settings"],[title="Settings"]{pointer-events:auto!important}
-.settings-button svg,.settings-btn svg,[aria-label="Settings"] svg,[title="Settings"] svg{display:block!important;visibility:visible!important;opacity:1!important}
-.momo-safe-pressed{animation:momoSafePress .22s cubic-bezier(.16,1,.3,1)}
-@keyframes momoSafePress{0%{transform:scale(1)}45%{transform:scale(.94)}75%{transform:scale(1.035)}100%{transform:scale(1)}}
 
 </style>
-<style id="momo-final-menu-css">#momo-final-menu-close{display:none;position:fixed;right:14px;top:14px;z-index:10002;width:40px;height:40px;place-items:center;border:1px solid var(--border);border-radius:12px;background:var(--solid);color:var(--text)}#momo-final-menu-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}@media(max-width:900px){body.momo-final-menu-open #momo-final-menu-close{display:grid!important}}</style>
-<style id="momo-final-menu-css">#momo-final-menu-close{display:none;position:fixed;right:14px;top:14px;z-index:10002;width:40px;height:40px;place-items:center;border:1px solid var(--border);border-radius:12px;background:var(--solid);color:var(--text)}#momo-final-menu-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}@media(max-width:900px){body.momo-final-menu-open #momo-final-menu-close{display:grid!important}}</style>
+
+
 </head>
 <body>
 <canvas id="fx"></canvas>
@@ -222,19 +178,9 @@ const fx=$('fx'),fctx=fx.getContext('2d');let W=innerWidth,H=innerHeight,dpr=1,t
 
 
 
-<script id="momo-botanical-ui-v8">(()=>{const A=(x,r=document)=>[...r.querySelectorAll(x)],N=v=>{const n=parseFloat(v);return Number.isFinite(n)?n:null};const density=()=>A('[data-density],.density-setting,.density-control,.interface-density').forEach(e=>(e.closest('.setting,.setting-row,.setting-item,.control-row')||e).remove());const progress=()=>A('input[type="range"]').forEach(r=>{const m=N(r.max),v=N(r.value);if(m)r.style.setProperty('--momo-progress',Math.max(0,Math.min(100,v/m*100))+'%')});const menu=()=>{const x=document.querySelector('.side');document.body.classList.toggle('momo-menu-open',!!x&&(x.classList.contains('open')||x.classList.contains('show')||x.classList.contains('active')))};const close=()=>{let b=document.getElementById('mobileMenuClose');if(!b){b=document.createElement('button');b.type='button';b.id='mobileMenuClose';b.setAttribute('aria-label','Close menu');b.innerHTML='<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg>';document.body.appendChild(b)}b.onclick=()=>{document.querySelector('.side')?.classList.remove('open','show','active');menu()};const x=document.querySelector('.side');if(x)new MutationObserver(menu).observe(x,{attributes:true,attributeFilter:['class']});menu()};const ripple=()=>document.addEventListener('pointerdown',e=>{if(!e.target.closest?.('button,.tool,.pl-item,.song,.nav button,.side-action'))return;const r=document.createElement('span');r.className='momo-ripple';r.style.left=e.clientX+'px';r.style.top=e.clientY+'px';document.body.appendChild(r);r.onanimationend=()=>r.remove()},{passive:true});const lyrics=()=>document.addEventListener('click',e=>{const l=e.target.closest?.('.lyric-line,[data-lyric-line],.lyrics-line,[class*="lyric"] [data-time]');if(!l)return;const a=document.querySelector('audio');let t=null;for(const k of ['data-time','data-start','data-timestamp','data-seconds']){const v=N(l.getAttribute?.(k));if(v!==null){t=v;break}}if(t===null){const m=(l.textContent||'').match(/(?:^|s)(d{1,2}):(d{2})(?:s|$)/);if(m)t=+m[1]*60+ +m[2]}if(a&&t!==null)a.currentTime=Math.max(0,t)},true);const floral=()=>{A('.home-hero,.player,.player-bar,.now-playing,.settings-card,.card,.panel,.playlist-card').forEach(root=>{root.classList.add('momo-floral-surface');const title=root.querySelector(':scope > h1,:scope > h2,:scope > h3,.title,.card-title,.section-title');if(title&&!title.querySelector(':scope > .momo-floral-mark')){const m=document.createElement('span');m.className='momo-floral-mark';m.textContent='';m.setAttribute('aria-hidden','true');title.prepend(m)}});A('.section-title,.library-title,.settings-title,.playlist-title').forEach(h=>{if(h.nextElementSibling?.classList.contains('momo-floral-rule'))return;const d=document.createElement('div');d.className='momo-floral-rule';d.innerHTML='<span></span>';h.insertAdjacentElement('afterend',d)})};const init=()=>{density();progress();close();ripple();lyrics();floral();document.addEventListener('input',progress,true);document.addEventListener('change',progress,true)};document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init()})()</script>
+
 <script src="enhancements.js"></script>
-<script id="momo-safe-repair">(()=>{
-const q=(x,r=document)=>r.querySelector(x),qa=(x,r=document)=>[...r.querySelectorAll(x)];
-const density=()=>qa('[data-density],.density-setting,.density-control,.interface-density,.interface-density-setting,.setting-density,.density-row,.interface-density-row').forEach(e=>{const row=e.closest('.setting,.setting-row,.setting-item,.control-row');(row||e).style.display='none'});
-const progress=()=>qa('.player input[type="range"],.player-bar input[type="range"],#playerBar input[type="range"],#nowPlayingBar input[type="range"]').forEach(r=>{const max=Number(r.max),v=Number(r.value);if(max>0)r.style.setProperty('--momo-progress',Math.max(0,Math.min(100,v/max*100))+'%')});
-const menu=()=>{const side=q('.side');if(!side)return;const open=side.classList.contains('open')||side.classList.contains('show')||side.classList.contains('active');document.body.classList.toggle('momo-safe-menu-open',open)};
-const close=()=>{let b=q('#momoSafeMenuClose');if(!b){b=document.createElement('button');b.id='momoSafeMenuClose';b.type='button';b.setAttribute('aria-label','Close menu');b.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';document.body.appendChild(b)}b.onclick=e=>{e.preventDefault();e.stopImmediatePropagation();const side=q('.side');if(side){side.classList.remove('open','show','active');side.style.display='';}document.body.classList.remove('momo-safe-menu-open');};const side=q('.side');if(side&&!side.__momoSafeWatch){new MutationObserver(menu).observe(side,{attributes:true,attributeFilter:['class']});side.__momoSafeWatch=true}menu()};
-const press=()=>{if(document.__momoSafePress)return;document.__momoSafePress=true;document.addEventListener('pointerdown',e=>{const b=e.target.closest('button,.tool,.pl-item,.song,.nav button,.side-action,.icon-btn,.primary,.secondary');if(!b)return;b.classList.remove('momo-safe-pressed');void b.offsetWidth;b.classList.add('momo-safe-pressed');setTimeout(()=>b.classList.remove('momo-safe-pressed'),240)},{passive:true})};
-const init=()=>{density();progress();close();press();document.addEventListener('input',progress,true);document.addEventListener('change',progress,true)};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-new MutationObserver(()=>{density();progress();close()}).observe(document.body,{childList:true,subtree:true});
-})();</script>
-<script id="momo-final-menu">(()=>{const q=(x,r=document)=>r.querySelector(x);let b=q('#momo-final-menu-close');if(!b){b=document.createElement('button');b.id='momo-final-menu-close';b.type='button';b.setAttribute('aria-label','Close menu');b.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';document.body.appendChild(b)}const sync=()=>{const side=q('.side');document.body.classList.toggle('momo-final-menu-open',!!side&&side.classList.contains('open'))};b.onclick=e=>{e.preventDefault();e.stopPropagation();const side=q('.side');if(side)side.classList.remove('open');sync()};const side=q('.side');if(side&&!side.__momoWatch){new MutationObserver(sync).observe(side,{attributes:true,attributeFilter:['class']});side.__momoWatch=true}sync()})();</script>
-<script id="momo-final-menu">(()=>{const q=(x,r=document)=>r.querySelector(x);let b=q('#momo-final-menu-close');if(!b){b=document.createElement('button');b.id='momo-final-menu-close';b.type='button';b.setAttribute('aria-label','Close menu');b.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';document.body.appendChild(b)}const sync=()=>{const side=q('.side');document.body.classList.toggle('momo-final-menu-open',!!side&&side.classList.contains('open'))};b.onclick=e=>{e.preventDefault();e.stopPropagation();const side=q('.side');if(side)side.classList.remove('open');sync()};const side=q('.side');if(side&&!side.__momoWatch){new MutationObserver(sync).observe(side,{attributes:true,attributeFilter:['class']});side.__momoWatch=true}sync()})();</script>
+
+
+
 </body></html>
