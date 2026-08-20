@@ -3,43 +3,35 @@ import fs from 'node:fs';
 const path = 'index.html';
 let html = fs.readFileSync(path, 'utf8');
 
-// Remove only the requested decorative glyphs. Keep the flower beside the logo.
 html = html.replace(/✿\s*❀\s*✽\s*✾\s*❁\s*❋\s*✻\s*✼/g, '');
 html = html.replace(/❈/g, '');
 
-const css = `
-/* MOMOIROBARA FINAL DIRECT FIX */
-.logo-flower{display:block!important;visibility:visible!important;opacity:1!important}
-.logo-flower .petal,.logo-flower .center{display:block!important}
-.momo-flower,.momo-flower-field,.momo-field-petal,.momo-floral-mark,.momo-floral-rule{display:none!important}
-.song:before,.nav button:before,.pl-item:before,.side-action:before,.tool:before,.head:before,.library-top:before,.player:before,.player-bar:before{content:none!important;display:none!important}
-.home-hero:before{content:none!important}
-[data-density],.density-setting,.density-control,.interface-density,.interface-density-setting,.setting-density,.density-row,.interface-density-row{display:none!important}
-.player input[type=range],.player-bar input[type=range],#playerBar input[type=range],#nowPlayingBar input[type=range]{appearance:none!important;-webkit-appearance:none!important;height:20px!important;overflow:visible!important;clip-path:none!important;background:transparent!important;margin:0!important;padding:0!important}
-.player input[type=range]::-webkit-slider-thumb,.player-bar input[type=range]::-webkit-slider-thumb,#playerBar input[type=range]::-webkit-slider-thumb,#nowPlayingBar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none!important;width:14px!important;height:14px!important;margin-top:-4px!important;border:3px solid var(--solid)!important;border-radius:50%!important;background:var(--a)!important;box-sizing:border-box!important}
-.player,.player-bar,#playerBar,#nowPlayingBar{visibility:visible!important;opacity:1!important;z-index:9999!important}
-.settings-button,.settings-btn,[aria-label="Settings"],[title="Settings"]{pointer-events:auto!important}
-.settings-button svg,.settings-btn svg,[aria-label="Settings"] svg,[title="Settings"] svg{display:block!important;visibility:visible!important;opacity:1!important}
-.momo-safe-pressed{animation:momoSafePress .22s cubic-bezier(.16,1,.3,1)}
-@keyframes momoSafePress{0%{transform:scale(1)}45%{transform:scale(.94)}75%{transform:scale(1.035)}100%{transform:scale(1)}}
-`;
-
-if (!html.includes('MOMOIROBARA FINAL DIRECT FIX')) {
-  const styleEnd = html.search(/<\/style>/i);
-  if (styleEnd >= 0) html = html.slice(0, styleEnd) + css + '\n' + html.slice(styleEnd);
+// Remove old generated repair layers that were overriding the real app.
+for (const name of ['DIRECT UI REPAIR V2','MOMOIROBARA FLOWER UI REPAIR V5','MOMOIROBARA BOTANICAL UI V7','MOMOIROBARA BOTANICAL UI V8','MOMOIROBARA TARGETED PLAYER/FLOWER CLEANUP','MOMOIROBARA FINAL DIRECT FIX','MOMOIROBARA PLAYER SAFETY']) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  html = html.replace(new RegExp(`/\\*\\s*${escaped}\\s*\\*/[\\s\\S]*?(?=\\n\\/\\*|\\n<\\/style>)`, 'g'), '');
 }
 
+for (const id of ['momo-botanical-ui-v7','momo-botanical-ui-v8','momo-final-menu','momo-safe-repair']) {
+  html = html.replace(new RegExp(`<script[^>]*id=["']${id}["'][^>]*>[\\s\\S]*?<\\/script>`, 'gi'), '');
+}
+html = html.replace(/<style[^>]*id=["']momo-final-menu-css["'][^>]*>[\s\S]*?<\/style>/gi, '');
+
+const css = `
+/* MOMOIROBARA CLEAN FEATURE HOOKS */
+.logo-flower{display:block!important;visibility:visible!important;opacity:1!important}
+.logo-flower .petal,.logo-flower .center{display:block!important}
+.home-hero{display:block!important;visibility:visible!important;opacity:1!important}
+.momo-flower,.momo-flower-field,.momo-field-petal,.momo-floral-mark,.momo-floral-rule{display:none!important}
+[data-density],.density-setting,.density-control,.interface-density,.interface-density-setting,.setting-density,.density-row,.interface-density-row{display:none!important}
+`;
+if (!html.includes('MOMOIROBARA CLEAN FEATURE HOOKS')) {
+  const end = html.search(/<\/style>/i);
+  html = end >= 0 ? html.slice(0,end) + css + '\n' + html.slice(end) : css + '\n' + html;
+}
 if (!/<script[^>]+src=["']enhancements\.js["']/i.test(html)) {
   html = html.replace(/<\/body>/i, '<script src="enhancements.js"></script>\n</body>');
 }
 
-const menuCss = `<style id="momo-final-menu-css">#momo-final-menu-close{display:none;position:fixed;right:14px;top:14px;z-index:10002;width:40px;height:40px;place-items:center;border:1px solid var(--border);border-radius:12px;background:var(--solid);color:var(--text)}#momo-final-menu-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}@media(max-width:900px){body.momo-final-menu-open #momo-final-menu-close{display:grid!important}}</style>`;
-const menuJs = `<script id="momo-final-menu">(()=>{const q=(x,r=document)=>r.querySelector(x);let b=q('#momo-final-menu-close');if(!b){b=document.createElement('button');b.id='momo-final-menu-close';b.type='button';b.setAttribute('aria-label','Close menu');b.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';document.body.appendChild(b)}const sync=()=>{const side=q('.side');document.body.classList.toggle('momo-final-menu-open',!!side&&side.classList.contains('open'))};b.onclick=e=>{e.preventDefault();e.stopPropagation();const side=q('.side');if(side)side.classList.remove('open');sync()};const side=q('.side');if(side&&!side.__momoWatch){new MutationObserver(sync).observe(side,{attributes:true,attributeFilter:['class']});side.__momoWatch=true}sync()})();</script>`;
-
-if (!html.includes('id="momo-final-menu-close"')) {
-  html = html.replace(/<\/head>/i, menuCss + '\n</head>');
-  html = html.replace(/<\/body>/i, menuJs + '\n</body>');
-}
-
 fs.writeFileSync(path, html, 'utf8');
-console.log('Momoirobara direct repair applied');
+console.log('Momoirobara clean repair applied');
