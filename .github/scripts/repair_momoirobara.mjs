@@ -6,8 +6,6 @@ let html = fs.readFileSync(path, 'utf8');
 html = html.replace(/✿\s*❀\s*✽\s*✾\s*❁\s*❋\s*✻\s*✼/g, '');
 html = html.replace(/❈/g, '');
 
-// Remove obsolete repair layers. Work on complete marker occurrences so the
-// workflow cannot leave a stale marker behind.
 const oldMarkers = [
   'DIRECT UI REPAIR V2',
   'MOMOIROBARA FLOWER UI REPAIR V5',
@@ -17,7 +15,6 @@ const oldMarkers = [
   'MOMOIROBARA FINAL DIRECT FIX',
   'MOMOIROBARA PLAYER SAFETY'
 ];
-
 for (const marker of oldMarkers) {
   const comment = `/* ${marker} */`;
   while (html.includes(comment)) {
@@ -48,16 +45,16 @@ const css = `
 .home-hero{display:block!important;visibility:visible!important;opacity:1!important}
 .momo-flower,.momo-flower-field,.momo-field-petal,.momo-floral-mark,.momo-floral-rule{display:none!important}
 [data-density],.density-setting,.density-control,.interface-density,.interface-density-setting,.setting-density,.density-row,.interface-density-row{display:none!important}
+.player input[type=range],.player-bar input[type=range],#playerBar input[type=range],#nowPlayingBar input[type=range]{overflow:visible!important;clip-path:none!important}
 `;
-
 if (!html.includes('MOMOIROBARA CLEAN FEATURE HOOKS')) {
   const end = html.search(/<\/style>/i);
   html = end >= 0 ? html.slice(0, end) + css + '\n' + html.slice(end) : css + '\n' + html;
 }
 
-if (!/<script[^>]+src=["']enhancements\.js["']/i.test(html)) {
-  html = html.replace(/<\/body>/i, '<script src="enhancements.js"></script>\n</body>');
-}
+// Always normalize the feature entrypoint so index.html itself is updated by the workflow.
+html = html.replace(/\s*<script[^>]+src=["']enhancements\.js["'][^>]*><\/script>/gi, '');
+html = html.replace(/<\/body>/i, '<script src="enhancements.js"></script>\n<!-- momoirobara-feature-build-2026-08-20-v4 -->\n</body>');
 
 fs.writeFileSync(path, html, 'utf8');
-console.log('Momoirobara clean repair applied');
+console.log('Momoirobara direct index repair applied');
