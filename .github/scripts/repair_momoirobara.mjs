@@ -3,11 +3,11 @@ import fs from 'node:fs';
 const path = 'index.html';
 let html = fs.readFileSync(path, 'utf8');
 
-// Remove unwanted decorative glyphs. Keep the intentional flower beside the logo.
 html = html.replace(/✿\s*❀\s*✽\s*✾\s*❁\s*❋\s*✻\s*✼/g, '');
 html = html.replace(/❈/g, '');
 
-// Remove known obsolete repair blocks by their exact marker, without fragile nested regex strings.
+// Remove obsolete repair layers. Work on complete marker occurrences so the
+// workflow cannot leave a stale marker behind.
 const oldMarkers = [
   'DIRECT UI REPAIR V2',
   'MOMOIROBARA FLOWER UI REPAIR V5',
@@ -19,20 +19,26 @@ const oldMarkers = [
 ];
 
 for (const marker of oldMarkers) {
-  const start = html.indexOf(`/* ${marker} */`);
-  if (start === -1) continue;
-  const next = html.indexOf('/*', start + marker.length + 8);
-  const endStyle = html.indexOf('</style>', start);
-  const end = next !== -1 && next < endStyle ? next : endStyle;
-  if (end !== -1) html = html.slice(0, start) + html.slice(end);
+  const comment = `/* ${marker} */`;
+  while (html.includes(comment)) {
+    const start = html.indexOf(comment);
+    const end = html.indexOf('</style>', start);
+    if (end === -1) {
+      html = html.replace(comment, '');
+      break;
+    }
+    html = html.slice(0, start) + html.slice(end);
+  }
 }
 
-// Remove only known obsolete generated scripts.
 for (const id of ['momo-botanical-ui-v7', 'momo-botanical-ui-v8', 'momo-final-menu', 'momo-safe-repair']) {
-  const open = html.indexOf(`<script id="${id}"`);
-  if (open === -1) continue;
-  const close = html.indexOf('</script>', open);
-  if (close !== -1) html = html.slice(0, open) + html.slice(close + '</script>'.length);
+  const open = `<script id="${id}"`;
+  while (html.includes(open)) {
+    const start = html.indexOf(open);
+    const end = html.indexOf('</script>', start);
+    if (end === -1) break;
+    html = html.slice(0, start) + html.slice(end + 9);
+  }
 }
 
 const css = `
