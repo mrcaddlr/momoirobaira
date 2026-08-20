@@ -129,6 +129,24 @@ footer.player,.player,.player-bar,#playerBar,#nowPlayingBar{visibility:visible!i
 #momoSafeMenuClose svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 @media(max-width:900px){body.momo-safe-menu-open #momoSafeMenuClose{display:grid!important}}
 
+
+/* MOMOIROBARA DIRECT FIXES */
+/* Remove decoration only. Keep hero copy and cover art. */
+.logo-flower,.petal,.center,.momo-flower,.momo-flower-field,.momo-field-petal,.momo-floral-mark,.momo-floral-rule{display:none!important}
+/* Remove Interface Density only. */
+[data-density],.density-setting,.density-control,.interface-density,.interface-density-setting,.setting-density,.density-row,.interface-density-row{display:none!important}
+/* Keep hero text and cover artwork. Only remove the decorative corner overlay. */
+.home-hero:after{content:none!important;display:none!important}
+/* Keep the progress thumb visible and inside the track. */
+.player input[type=range],.player-bar input[type=range],#playerBar input[type=range],#nowPlayingBar input[type=range]{appearance:none!important;-webkit-appearance:none!important;height:20px!important;overflow:visible!important;background:transparent!important;margin:0!important;padding:0!important}
+.player input[type=range]::-webkit-slider-runnable-track,.player-bar input[type=range]::-webkit-slider-runnable-track,#playerBar input[type=range]::-webkit-slider-runnable-track,#nowPlayingBar input[type=range]::-webkit-slider-runnable-track{height:6px!important;border-radius:999px!important;background:var(--track)!important}
+.player input[type=range]::-webkit-slider-thumb,.player-bar input[type=range]::-webkit-slider-thumb,#playerBar input[type=range]::-webkit-slider-thumb,#nowPlayingBar input[type=range]::-webkit-slider-thumb{appearance:none!important;-webkit-appearance:none!important;width:14px!important;height:14px!important;margin-top:-4px!important;border:3px solid var(--solid)!important;border-radius:50%!important;background:var(--a)!important;box-sizing:border-box!important}
+/* Menu close: a button that closes the side panel, never removes itself. */
+#momoSafeMenuClose{position:fixed;top:14px;right:14px;width:38px;height:38px;display:none;place-items:center;z-index:10002;border:1px solid var(--border);border-radius:12px;background:var(--solid);color:var(--text);box-shadow:var(--shadow2)}
+#momoSafeMenuClose svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+@media(max-width:900px){body.momo-safe-menu-open #momoSafeMenuClose{display:grid!important}}
+.momo-safe-pressed{animation:momoSafePress .22s cubic-bezier(.16,1,.3,1)}@keyframes momoSafePress{0%{transform:scale(1)}45%{transform:scale(.94)}75%{transform:scale(1.035)}100%{transform:scale(1)}}
+
 </style>
 </head>
 <body>
