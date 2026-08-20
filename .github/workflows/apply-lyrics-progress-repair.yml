@@ -1,4 +1,4 @@
-name: Apply lyrics progress repair
+name: Apply Momoirobara UI repair
 
 on:
   push:
@@ -13,16 +13,20 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Replace lyrics progress machinery
-        run: python .github/repair_lyrics_progress.py
+      - name: Apply UI repair
+        run: python3 scripts/momoi_ui_repair.py
 
-      - name: Commit repaired index
+      - name: Commit repaired app
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'fix: replace lyrics progress machinery'
+          if git diff --cached --quiet; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git commit -m 'fix: clean lyrics and library interactions'
           git push
