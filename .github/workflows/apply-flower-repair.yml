@@ -23,16 +23,17 @@ jobs:
         run: |
           node --check .github/scripts/repair_momoirobara.mjs
           test -s index.html
-          grep -q 'MOMOIROBARA CLEAN FEATURE HOOKS' index.html
-          grep -q 'enhancements.js' index.html
+          grep -q 'MOMOIROBARA INLINE BUILD' index.html
+          grep -q 'momo-inline-features' index.html
+          if grep -q 'src="enhancements.js"' index.html; then echo 'external enhancements.js reference remains'; exit 1; fi
           if grep -q '❈' index.html; then echo '❈ is still present'; exit 1; fi
           if grep -q 'logo-flower{display:none' index.html; then echo 'logo flower is still being hidden'; exit 1; fi
-          echo 'Targeted repair validation passed'
-      - name: Commit repaired index
+          echo 'Inline repair validation passed'
+      - name: Commit repaired index and remove external feature file
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          if git diff --cached --quiet; then echo 'No index changes'; exit 0; fi
-          git commit -m 'fix: apply Momoirobara UI repairs'
+          git add -A
+          if git diff --cached --quiet; then echo 'No changes'; exit 0; fi
+          git commit -m 'fix: inline Momoirobara UI features into index'
           git push origin main
