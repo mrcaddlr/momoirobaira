@@ -1,9 +1,8 @@
 // MusicBrainz metadata recovery provider.
-// MusicBrainz is free for non-commercial use and does not require an API key.
+// Free public API; no API key is embedded in Momoirobara.
 
 const BASE = 'https://musicbrainz.org/ws/2';
 const USER_AGENT = 'Momoirobara/experimental (https://github.com/mrcaddlr/momoirobara)';
-
 const text = value => String(value ?? '').trim();
 
 function score(recording, metadata) {
@@ -11,12 +10,17 @@ function score(recording, metadata) {
   const title = text(metadata.title).toLowerCase();
   const artist = text(metadata.artist).toLowerCase();
   const duration = Number(metadata.duration) || 0;
-  if (text(recording.title).toLowerCase() === title) score += 60;
+  const rTitle = text(recording.title).toLowerCase();
+  if (title && rTitle === title) score += 80;
+  else if (title && (rTitle.includes(title) || title.includes(rTitle))) score += 35;
   const artists = (recording['artist-credit'] || []).map(c => text(c.name || c.artist?.name).toLowerCase());
-  if (artists.includes(artist)) score += 50;
-  const length = Number(recording.length || 0) / 1000;
-  if (duration && length) score += Math.max(0, 30 - Math.abs(duration - length) * 3);
-  if (recording.releases?.some(r => text(r.title).toLowerCase() === text(metadata.album).toLowerCase())) score += 20;
+  if (artist && artists.includes(artist)) score += 70;
+  if (duration && recording.length) {
+    const delta = Math.abs(duration - Number(recording.length) / 1000);
+    if (delta <= 2) score += 35;
+    else if (delta <= 5) score += 15;
+  }
+  if (text(metadata.album) && recording.releases?.some(r => text(r.title).toLowerCase() === text(metadata.album).toLowerCase())) score += 25;
   return score;
 }
 
@@ -53,9 +57,13 @@ export const musicBrainzProvider = {
         if (best) return fromRecording(best);
       } catch (_) {}
     }
-    if (!text(m.title) || !text(m.artist)) return {};
-    const query = `recording:"${text(m.title).replace(/[\\\"():]/g, ' ')}" AND artist:"${text(m.artist).replace(/[\\\"():]/g, ' ')}"`;
-    const data = await request(`/recording?query=${encodeURIComponent(query)}&limit=10&inc=artist-credits+releases&fmt=json`, signal);
+    if (!text(m.title)) return {};
+    const safeTitle = text(m.title).replace(/[\\\"():]/g, ' ');
+    const safeArtist = text(m.artist).replace(/[\\\"():]/g, ' ');
+    const query = safeArtist
+      ? `recording:"${safeTitle}" AND artist:"${safeArtist}"`
+      : `recording:"${safeTitle}"`;
+    const data = await request(`/recording?query=${encodeURIComponent(query)}&limit=20&inc=artist-credits+releases+isrcs&fmt=json`, signal);
     const best = (data.recordings || []).sort((a, b) => score(b, m) - score(a, m))[0];
     return best ? fromRecording(best) : {};
   },
