@@ -1023,5 +1023,60 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script src="./responsive.js?v=1" defer></script>
+<!-- MOMOIROBARA PERSISTENCE V2 -->
+<script>
+(()=>{
+  'use strict';
+  const DB='momoirobara-files-v2', STORE='files';
+  let dbPromise;
+  const openDB=()=>dbPromise||(dbPromise=new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)) return reject(Error('IndexedDB unavailable'));
+    const r=indexedDB.open(DB,1);
+    r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id'});
+    r.onsuccess=()=>resolve(r.result); r.onerror=()=>reject(r.error);
+  }));
+  const key=f=>`${f.name}::${f.size}::${f.lastModified}`;
+  async function remember(files){
+    try{
+      const db=await openDB(), tx=db.transaction(STORE,'readwrite'), st=tx.objectStore(STORE);
+      for(const f of files||[]) if(f?.size) st.put({id:key(f),name:f.name,size:f.size,lastModified:f.lastModified,type:f.type,blob:f});
+    }catch(e){console.warn('Momoirobara file persistence:',e)}
+  }
+  async function restore(){
+    try{
+      if(document.querySelector('#library .song,#recent .song')) return;
+      const db=await openDB(), rows=await new Promise((resolve,reject)=>{const r=db.transaction(STORE,'readonly').objectStore(STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)});
+      if(!rows.length) return;
+      const files=rows.map(x=>new File([x.blob],x.name,{type:x.type||'audio/*',lastModified:x.lastModified||Date.now()}));
+      const input=document.getElementById('file');
+      if(!input||!window.DataTransfer) return;
+      const dt=new DataTransfer(); files.forEach(f=>dt.items.add(f));
+      input.files=dt.files;
+      input.dispatchEvent(new Event('change',{bubbles:true}));
+    }catch(e){console.warn('Momoirobara restore:',e)}
+  }
+  function mirrorState(){
+    try{
+      const state={};
+      for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i); if(k) state[k]=localStorage.getItem(k)}
+      localStorage.setItem('momoirobara_state_mirror_v2',JSON.stringify({updated:Date.now(),state}));
+    }catch{}
+  }
+  function trackPage(){
+    const active=document.querySelector('.page.active');
+    if(active) localStorage.setItem('momoirobara.lastPage',active.id.replace(/^page-/,''));
+  }
+  document.addEventListener('change',e=>{if(e.target?.id==='file'||e.target?.id==='folder')remember([...e.target.files]);},true);
+  document.addEventListener('click',e=>{
+    if(e.target.closest('.nav button,[data-page],#newPlaylistBtn,[data-edit-pl],[data-add-pl],[data-fav],#theme,#animations,#fxToggle,#density,#clear')){
+      setTimeout(()=>{trackPage();mirrorState();},150);
+    }
+  },true);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){trackPage();mirrorState()}});
+  window.addEventListener('pagehide',()=>{trackPage();mirrorState()});
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(restore,1800),{once:true}); else setTimeout(restore,1800);
+  setTimeout(trackPage,2200);
+})();
+</script>
 </body>
 </html>
