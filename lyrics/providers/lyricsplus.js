@@ -13,20 +13,37 @@ function seconds(value) {
 }
 
 function normalizeWord(w) {
-  const start = seconds(w.start ?? w.startTime ?? w.start_ms);
-  const end = seconds(w.end ?? w.endTime ?? w.end_ms ?? start);
+  const start = seconds(w.start ?? w.startTime ?? w.start_ms ?? w.time);
+  const end = seconds(w.end ?? w.endTime ?? w.end_ms ?? (Number.isFinite(start) ? start + seconds(w.duration || 0) : NaN));
   return { text: String(w.text ?? w.word ?? '').trim(), start, end };
+}
+
+function parseSyllables(items) {
+  if (!Array.isArray(items)) return [];
+  return items.map(normalizeWord).filter(w => w.text && Number.isFinite(w.start));
 }
 
 function parseLines(data) {
   const raw = data?.lines ?? data?.lyrics ?? data?.data?.lines ?? [];
   if (!Array.isArray(raw)) return [];
-  return raw.map(line => ({
-    text: String(line.text ?? line.line ?? '').trim(),
-    start: seconds(line.start ?? line.startTime ?? line.start_ms),
-    end: seconds(line.end ?? line.endTime ?? line.end_ms),
-    words: (line.words ?? line.syllables ?? []).map(normalizeWord).filter(w => w.text && Number.isFinite(w.start))
-  })).filter(l => l.text || l.words.length);
+  return raw.map((line, index) => {
+    const start = seconds(line.start ?? line.startTime ?? line.start_ms ?? line.time);
+    const end = seconds(line.end ?? line.endTime ?? line.end_ms ?? (Number.isFinite(start) ? start + seconds(line.duration || 0) : NaN));
+    const words = parseSyllables(line.words ?? line.syllables ?? line.syllabus);
+    return { text: String(line.text ?? line.line ?? '').trim(), start, end, words, index };
+  }).filter(l => l.text || l.words.length);
+}
+
+function parseLyricsPlus(data) {
+  const lines = parseLines(data);
+  if (lines.length) return lines;
+  const raw = Array.isArray(data?.lyrics) ? data.lyrics : [];
+  return raw.map((line, index) => {
+    const start = seconds(line.time ?? line.start ?? line.start_ms);
+    const end = Number.isFinite(start) ? start + seconds(line.duration || 0) : NaN;
+    const words = parseSyllables(line.syllabus ?? line.syllables ?? line.words);
+    return { text: String(line.text || '').trim(), start, end, words, index };
+  }).filter(l => l.text || l.words.length);
 }
 
 export const lyricsPlusProvider = {
@@ -43,8 +60,6 @@ export const lyricsPlusProvider = {
     if (album) params.set('album', album);
     if (Number.isFinite(duration) && duration > 0) params.set('duration', String(duration));
     if (isrc) params.set('isrc', isrc);
-    // Deliberately do not request the Musixmatch source. Momoirobara's experimental
-    // provider chain is LyricsPlus -> LRCLIB -> LRC Mux.
     params.set('source', 'apple,lyricsplus,spotify');
 
     let lastError;
@@ -53,7 +68,7 @@ export const lyricsPlusProvider = {
         const response = await fetch(`${mirror}/v2/lyrics/get?${params}`, { signal: options.signal });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        const lines = parseLines(data);
+        const lines = parseLyricsPlus(data);
         if (lines.length || data?.plainLyrics) return { ...data, lines, rawFormat: data?.type || null };
       } catch (error) {
         if (error?.name === 'AbortError') throw error;
