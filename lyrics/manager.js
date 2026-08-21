@@ -1,4 +1,4 @@
-const CACHE_KEY = 'momoirobara_lyrics_cache_v6';
+const CACHE_KEY = 'momoirobara_lyrics_cache_v7';
 const CACHE_TTL = 1000 * 60 * 60 * 24 * 30;
 
 function loadCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {}; } catch { return {}; } }
@@ -21,50 +21,26 @@ function normalizeWords(words) {
   return words.map(w => ({
     text: String(w.text ?? w.word ?? '').trim(),
     start: Number(w.start ?? (Number(w.start_ms) / 1000)),
-    end: Number(w.end ?? (Number(w.end_ms) / 1000)),
-    estimated: Boolean(w.estimated)
+    end: Number(w.end ?? (Number(w.end_ms) / 1000))
   })).filter(w => w.text && Number.isFinite(w.start) && Number.isFinite(w.end) && w.end >= w.start);
-}
-
-function estimateWords(line) {
-  if (line.words?.length || !line.text) return normalizeWords(line.words);
-  const start = Number(line.start ?? (Number(line.start_ms) / 1000));
-  const end = Number(line.end ?? (Number(line.end_ms) / 1000));
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return [];
-  const tokens = String(line.text).trim().split(/\s+/).filter(Boolean);
-  if (!tokens.length) return [];
-  const weights = tokens.map(t => Math.max(1, t.replace(/\s/g, '').length));
-  const total = weights.reduce((a, b) => a + b, 0);
-  let cursor = start;
-  return tokens.map((text, i) => {
-    const next = i === tokens.length - 1 ? end : cursor + (end - start) * weights[i] / total;
-    const word = { text, start: cursor, end: Math.max(cursor, next), estimated: true };
-    cursor = next;
-    return word;
-  });
 }
 
 export function normalizeLyrics(payload, source = 'unknown') {
   if (!payload) return null;
   const lines = Array.isArray(payload.lines) ? payload.lines : [];
-  const normalizedLines = lines.map(l => {
-    const line = {
-      text: String(l.text || '').trim(),
-      start: Number(l.start ?? (Number(l.start_ms) / 1000)),
-      end: Number(l.end ?? (Number(l.end_ms) / 1000)),
-      words: normalizeWords(l.words)
-    };
-    if (!line.words.length) line.words = estimateWords(line);
-    return line;
-  }).filter(l => l.text || l.words.length);
+  const normalizedLines = lines.map(l => ({
+    text: String(l.text || '').trim(),
+    start: Number(l.start ?? (Number(l.start_ms) / 1000)),
+    end: Number(l.end ?? (Number(l.end_ms) / 1000)),
+    words: normalizeWords(l.words)
+  })).filter(l => l.text || l.words.length);
   if (!normalizedLines.length && !String(payload.plainLyrics || '').trim()) return null;
-  const hasTrueWords = normalizedLines.some(l => l.words.some(w => !w.estimated));
-  const hasEstimatedWords = normalizedLines.some(l => l.words.some(w => w.estimated));
+  const hasNativeWords = normalizedLines.some(l => l.words.length);
   return {
     source,
     sourceId: payload.sourceId || null,
-    format: normalizedLines.some(l => l.words.length) ? 'word' : normalizedLines.length ? 'line' : 'plain',
-    wordTiming: hasTrueWords ? 'native' : hasEstimatedWords ? 'estimated' : 'none',
+    format: hasNativeWords ? 'word' : normalizedLines.length ? 'line' : 'plain',
+    wordTiming: hasNativeWords ? 'native' : 'none',
     fetchedAt: Date.now(),
     lines: normalizedLines,
     plainLyrics: payload.plainLyrics || '',
@@ -92,18 +68,12 @@ function scoreCandidate(candidate, track = {}) {
   if (album && cAlbum && album === cAlbum) score += 15;
   if (duration > 0 && cDuration > 0) { const delta = Math.abs(duration - cDuration); if (delta <= 2) score += 30; else if (delta <= 5) score += 15; }
   if (candidate.isrc && m.isrc && String(candidate.isrc).toUpperCase() === String(m.isrc).toUpperCase()) score += 100;
-  if (candidate.lines?.some(l => l.words?.some(w => !w.estimated))) score += 60;
-  else if (candidate.lines?.some(l => l.words?.length)) score += 15;
+  if (candidate.lines?.some(l => l.words?.length)) score += 60;
   if (String(candidate.plainLyrics || '').trim()) score += 5;
   return score;
 }
-
-function hasUsableResult(result) {
-  if (!result) return false;
-  if (Array.isArray(result.lines) && result.lines.some(l => l.text || (Array.isArray(l.words) && l.words.length))) return true;
-  return Boolean(String(result.plainLyrics || '').trim());
-}
-function hasWordTiming(result) { return Boolean(result?.lines?.some(l => Array.isArray(l.words) && l.words.some(w => !w.estimated))); }
+function hasUsableResult(result) { return Boolean(result && ((Array.isArray(result.lines) && result.lines.some(l => l.text || l.words?.length)) || String(result.plainLyrics || '').trim())); }
+function hasWordTiming(result) { return Boolean(result?.lines?.some(l => Array.isArray(l.words) && l.words.length)); }
 
 export function createLyricsManager({ providers = [], cache = loadCache(), delayMs = 300 } = {}) {
   const manager = {
