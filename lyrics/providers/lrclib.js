@@ -1,3 +1,5 @@
+import { parseLyricsfile, hasWordTiming } from '../lyricsfile.js';
+
 const LRCLIB_API = 'https://lrclib.net/api/get';
 
 function parseEnhancedLrc(lrc = '') {
@@ -13,6 +15,7 @@ function parseEnhancedLrc(lrc = '') {
     const body = match[4] || '';
     const words = [];
     let word;
+    wordRe.lastIndex = 0;
     while ((word = wordRe.exec(body))) {
       const wordStart = word[4] != null
         ? Number(word[4])
@@ -68,13 +71,31 @@ export const lrclibProvider = {
     if (!response.ok) throw new Error(`LRCLIB HTTP ${response.status}`);
 
     const data = await response.json();
-    const lines = parseEnhancedLrc(data.syncedLyrics || '');
+    let lyricsfile = null;
+    let lyricsfileData = null;
+    if (data.lyricsfile) {
+      try {
+        lyricsfile = String(data.lyricsfile);
+        lyricsfileData = parseLyricsfile(lyricsfile);
+      } catch (error) {
+        console.warn('[lyrics:lrclib] Lyricsfile parse failed', error);
+      }
+    }
+
+    // Lyricsfile is the preferred structured representation when it contains
+    // useful timing. Enhanced LRC remains a compatible fallback.
+    const fileHasTiming = hasWordTiming(lyricsfileData) || Boolean(lyricsfileData?.lines?.length);
+    const lines = fileHasTiming
+      ? lyricsfileData.lines.map(line => ({ text: line.text, start: line.start, end: line.end, words: line.words || [] }))
+      : parseEnhancedLrc(data.syncedLyrics || '');
+
     return {
       lines,
-      plainLyrics: data.plainLyrics || '',
+      plainLyrics: data.plainLyrics || lyricsfileData?.plain || '',
       sourceId: data.id || null,
-      format: lines.some(line => line.words.length) ? 'word' : (lines.length ? 'line' : 'plain'),
-      lyricsfile: data.lyricsfile || null,
+      format: lines.some(line => line.words?.length) ? 'word' : (lines.length ? 'line' : 'plain'),
+      lyricsfile,
+      rawFormat: fileHasTiming ? 'lyricsfile' : 'enhanced-lrc',
       metadata: {
         title: data.trackName || data.name || meta.title,
         artist: data.artistName || meta.artist,
