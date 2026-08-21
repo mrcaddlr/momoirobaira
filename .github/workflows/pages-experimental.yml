@@ -30,6 +30,23 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Inject experimental lyrics UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+          tag = '<script type="module" src="./lyrics/experimental-ui.js"></script>'
+          if tag not in text:
+              marker = '</body>'
+              if marker in text:
+                  text = text.replace(marker, tag + '\n' + marker, 1)
+              else:
+                  text += '\n' + tag + '\n'
+              p.write_text(text, encoding='utf-8')
+          PY
+
       - name: Upload experimental site
         uses: actions/upload-pages-artifact@v4
         with:
