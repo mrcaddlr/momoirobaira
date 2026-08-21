@@ -26,25 +26,37 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: experimental
+          fetch-depth: 1
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Inject experimental lyrics UI
+      - name: Inject experimental lyrics UI and build marker
         shell: bash
+        env:
+          BUILD_SHA: ${{ github.sha }}
         run: |
           python3 - <<'PY'
+          import os
           from pathlib import Path
           p = Path('index.html')
           text = p.read_text(encoding='utf-8')
-          tag = '<script type="module" src="./lyrics/experimental-ui.js"></script>'
-          if tag not in text:
-              marker = '</body>'
-              if marker in text:
-                  text = text.replace(marker, tag + '\n' + marker, 1)
-              else:
-                  text += '\n' + tag + '\n'
-              p.write_text(text, encoding='utf-8')
+          sha = os.environ['BUILD_SHA']
+          tag = f'<script type="module" src="./lyrics/experimental-ui.js?v={sha}"></script>'
+          marker = f'<meta name="momoirobara-experimental-build" content="{sha}">'
+          import re
+          text = re.sub(r'<meta name="momoirobara-experimental-build"[^>]*>\s*', '', text)
+          text = re.sub(r'<script type="module" src="\./lyrics/experimental-ui\.js(?:\?[^\"]*)?"></script>\s*', '', text)
+          if '</head>' in text:
+              text = text.replace('</head>', marker + '\n</head>', 1)
+          else:
+              text = marker + '\n' + text
+          if '</body>' in text:
+              text = text.replace('</body>', tag + '\n</body>', 1)
+          else:
+              text += '\n' + tag + '\n'
+          p.write_text(text, encoding='utf-8')
+          Path('experimental-build.txt').write_text(sha + '\n', encoding='utf-8')
           PY
 
       - name: Upload experimental site
