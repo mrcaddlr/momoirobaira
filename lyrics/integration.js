@@ -1,5 +1,6 @@
 import { createLyricsManager } from './manager.js';
 import { createWordSyncController } from './word-sync-controller.js';
+import { parseLyricsfile, hasWordTiming as lyricsfileHasWordTiming } from './lyricsfile.js';
 import { defaultLyricsProviders } from './providers/index.js';
 
 export function createMomoirobaraLyrics({ audio, getLines, getLineElement, onLineChange } = {}) {
@@ -10,7 +11,6 @@ export function createMomoirobaraLyrics({ audio, getLines, getLineElement, onLin
     getLineElement,
     onLineChange,
   });
-
   return {
     manager,
     controller,
@@ -38,6 +38,33 @@ function trackFromApp() {
   };
 }
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function upgradeLyricsfile(result) {
+  if (!result?.lyricsfile || result.format === 'word') return result;
+  try {
+    const parsed = typeof result.lyricsfile === 'string' ? parseLyricsfile(result.lyricsfile) : result.lyricsfile;
+    if (parsed && lyricsfileHasWordTiming(parsed)) {
+      return {
+        ...result,
+        format: 'word',
+        lines: parsed.lines.map(line => ({
+          text: line.text || '',
+          start: Number(line.start || 0),
+          end: Number(line.end || 0),
+          words: (line.words || []).map(word => ({ text: word.text || '', start: Number(word.start || 0), end: Number(word.end || 0) }))
+        })),
+        plainLyrics: result.plainLyrics || parsed.plain || ''
+      };
+    }
+  } catch (error) {
+    console.warn('Momoirobara Lyricsfile parse failed:', error);
+  }
+  return result;
+}
+
 function renderLyricsResult(result) {
   const root = document.querySelector('#lyr');
   if (!root) return;
@@ -47,7 +74,6 @@ function renderLyricsResult(result) {
       : '<div class="empty">No lyrics found.</div>';
     return;
   }
-
   root.dataset.source = result.source || 'lyrics';
   root.innerHTML = result.lines.map((line, index) => {
     const words = Array.isArray(line.words) && line.words.length
@@ -55,10 +81,6 @@ function renderLyricsResult(result) {
       : escapeHtml(line.text || '');
     return `<div class="line" data-i="${index}" data-time="${Number(line.start) || 0}">${words}</div>`;
   }).join('');
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
 export async function bootstrapMomoirobaraLyrics() {
@@ -69,6 +91,7 @@ export async function bootstrapMomoirobaraLyrics() {
   let activeTrackKey = '';
   let loading = false;
   let raf = 0;
+  let suppressObserver = false;
 
   const getLines = () => result?.lines || [];
   const getLineElement = index => document.querySelector(`#lyr .line[data-i="${index}"]`);
@@ -116,18 +139,35 @@ export async function bootstrapMomoirobaraLyrics() {
     activeTrackKey = key;
     loading = true;
     result = null;
-    document.querySelector('#lyr')?.replaceChildren(Object.assign(document.createElement('div'), { className: 'empty', textContent: 'Looking for lyrics…' }));
+    suppressObserver = true;
+    const root = document.querySelector('#lyr');
+    if (root) root.innerHTML = '<div class="empty">Looking for lyrics…</div>';
     try {
-      result = await engine.resolve(track);
+      result = upgradeLyricsfile(await engine.resolve(track));
+      suppressObserver = true;
       renderLyricsResult(result);
       engine.controller.refresh();
+      setTimeout(() => { suppressObserver = false; }, 0);
     } catch (error) {
       console.warn('Momoirobara experimental lyrics:', error);
       result = null;
-      document.querySelector('#lyr')?.replaceChildren(Object.assign(document.createElement('div'), { className: 'empty', textContent: 'No lyrics found.' }));
+      suppressObserver = true;
+      if (root) root.innerHTML = '<div class="empty">No lyrics found.</div>';
+      setTimeout(() => { suppressObserver = false; }, 0);
     } finally {
       loading = false;
     }
+  }
+
+  const root = document.querySelector('#lyr');
+  if (root) {
+    new MutationObserver(() => {
+      if (!suppressObserver && result?.lines?.length && root.dataset.source !== 'lyrics') {
+        suppressObserver = true;
+        renderLyricsResult(result);
+        setTimeout(() => { suppressObserver = false; }, 0);
+      }
+    }).observe(root, { childList: true, subtree: true });
   }
 
   audio.addEventListener('loadedmetadata', load);
