@@ -1,11 +1,11 @@
-const CACHE_KEY = 'momoirobara_lyrics_cache_v4';
+const CACHE_KEY = 'momoirobara_lyrics_cache_v5';
+const CACHE_TTL = 1000 * 60 * 60 * 24 * 30;
 
 function loadCache() {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {}; }
   catch { return {}; }
 }
 function saveCache(cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch {} }
-
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 export function songIdentity(track = {}) {
@@ -96,12 +96,18 @@ export function createLyricsManager({ providers = [], cache = loadCache(), delay
       if (provider?.id && typeof provider.getLyrics === 'function') manager.providers.push(provider);
       return manager;
     },
-    getCached(track) { return cache[songIdentity(track)] || null; },
+    getCached(track) {
+      const entry = cache[songIdentity(track)];
+      if (!entry) return null;
+      if (entry.savedAt && Date.now() - entry.savedAt > CACHE_TTL) return null;
+      return entry.lyrics || entry;
+    },
     cacheLyrics(track, lyrics) {
       const key = songIdentity(track);
-      if (key && lyrics) { cache[key] = lyrics; saveCache(cache); }
+      if (key && lyrics) { cache[key] = { savedAt: Date.now(), lyrics }; saveCache(cache); }
     },
     clearCache() { saveCache({}); Object.keys(cache).forEach(k => delete cache[k]); },
+    async refresh(track, options = {}) { return manager.resolve(track, { ...options, refresh: true }); },
     async resolve(track, options = {}) {
       if (!options.refresh) {
         const cached = manager.getCached(track);
