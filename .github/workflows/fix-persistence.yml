@@ -1,0 +1,74 @@
+name: Repair Momoirobara persistence
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch persistence bootstrap
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<!-- MOMOIROBARA PERSISTENCE BOOTSTRAP -->'
+          if marker in s:
+              print('Persistence bootstrap already present')
+              raise SystemExit
+          patch=r'''<!-- MOMOIROBARA PERSISTENCE BOOTSTRAP -->
+          <script>
+          (()=>{
+            const KEY='momoirobara_persistence_v3';
+            const safe=(fn,fallback)=>{try{return fn()}catch(e){console.warn('Momoirobara persistence:',e);return fallback}};
+            const save=()=>safe(()=>{
+              const state={
+                page:document.querySelector('.page.active')?.id||document.querySelector('[data-page].active')?.dataset.page||'home',
+                playlists:safe(()=>JSON.parse(localStorage.getItem('momoirobara_playlists')||'[]'),[]),
+                theme:localStorage.getItem('momoirobara_theme'),
+                volume:localStorage.getItem('momoirobara_volume'),
+                repeat:localStorage.getItem('momoirobara_repeat'),
+                shuffle:localStorage.getItem('momoirobara_shuffle'),
+                updated:Date.now()
+              };
+              localStorage.setItem(KEY,JSON.stringify(state));
+            },false);
+            const restore=()=>safe(()=>{
+              const state=JSON.parse(localStorage.getItem(KEY)||'null');
+              if(!state)return;
+              if(state.playlists?.length && !localStorage.getItem('momoirobara_playlists'))
+                localStorage.setItem('momoirobara_playlists',JSON.stringify(state.playlists));
+              for(const [k,v] of Object.entries({theme:state.theme,volume:state.volume,repeat:state.repeat,shuffle:state.shuffle}))
+                if(v!=null && localStorage.getItem('momoirobara_'+k)==null)localStorage.setItem('momoirobara_'+k,v);
+            },false);
+            restore();
+            addEventListener('beforeunload',save,{passive:true});
+            document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
+            document.addEventListener('click',e=>{if(e.target.closest('button,[role="button"],a'))setTimeout(save,0)},true);
+            setTimeout(save,1500);
+          })();
+          </script>
+          '''
+          if '</body>' in s:
+              s=s.replace('</body>',patch+'</body>',1)
+          else:
+              s += patch
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit repair
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git diff --cached --quiet || git commit -m "Fix persistent app state"
+          git push
