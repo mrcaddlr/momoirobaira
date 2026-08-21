@@ -1,10 +1,12 @@
-const CACHE_KEY = 'momoirobara_lyrics_cache_v3';
+const CACHE_KEY = 'momoirobara_lyrics_cache_v4';
 
 function loadCache() {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {}; }
   catch { return {}; }
 }
 function saveCache(cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch {} }
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 export function songIdentity(track = {}) {
   const m = track.metadata || {};
@@ -21,8 +23,8 @@ function normalizeWords(words) {
   if (!Array.isArray(words)) return [];
   return words.map(w => ({
     text: String(w.text ?? w.word ?? '').trim(),
-    start: Number(w.start ?? w.start_ms / 1000),
-    end: Number(w.end ?? w.end_ms / 1000)
+    start: Number(w.start ?? (Number(w.start_ms) / 1000)),
+    end: Number(w.end ?? (Number(w.end_ms) / 1000))
   })).filter(w => w.text && Number.isFinite(w.start) && Number.isFinite(w.end) && w.end >= w.start);
 }
 
@@ -31,8 +33,8 @@ export function normalizeLyrics(payload, source = 'unknown') {
   const lines = Array.isArray(payload.lines) ? payload.lines : [];
   const normalizedLines = lines.map(l => ({
     text: String(l.text || '').trim(),
-    start: Number(l.start ?? l.start_ms / 1000),
-    end: Number(l.end ?? l.end_ms / 1000),
+    start: Number(l.start ?? (Number(l.start_ms) / 1000)),
+    end: Number(l.end ?? (Number(l.end_ms) / 1000)),
     words: normalizeWords(l.words)
   })).filter(l => l.text || l.words.length);
   if (!normalizedLines.length && !String(payload.plainLyrics || '').trim()) return null;
@@ -87,7 +89,7 @@ function hasUsableResult(result) {
 }
 function hasWordTiming(result) { return Boolean(result?.lines?.some(l => Array.isArray(l.words) && l.words.length)); }
 
-export function createLyricsManager({ providers = [], cache = loadCache() } = {}) {
+export function createLyricsManager({ providers = [], cache = loadCache(), delayMs = 300 } = {}) {
   const manager = {
     providers: [],
     register(provider) {
@@ -106,16 +108,25 @@ export function createLyricsManager({ providers = [], cache = loadCache() } = {}
         if (cached) return cached;
       }
       const candidates = [];
-      for (const provider of manager.providers) {
+      for (let index = 0; index < manager.providers.length; index++) {
+        const provider = manager.providers[index];
         try {
           const result = await provider.getLyrics(track, options);
-          if (!hasUsableResult(result)) continue;
-          const normalized = normalizeLyrics(result, provider.id);
-          if (!normalized) continue;
-          normalized.matchScore = scoreCandidate(result, track);
-          candidates.push(normalized);
-          if (hasWordTiming(normalized) && normalized.matchScore >= 150) break;
-        } catch (error) { console.warn(`[lyrics:${provider.id}]`, error); }
+          if (hasUsableResult(result)) {
+            const normalized = normalizeLyrics(result, provider.id);
+            if (normalized) {
+              normalized.matchScore = scoreCandidate(result, track);
+              candidates.push(normalized);
+              if (hasWordTiming(normalized) && normalized.matchScore >= 150) break;
+            }
+          }
+        } catch (error) {
+          console.warn(`[lyrics:${provider.id}]`, error);
+          if (error?.retryAfter && index < manager.providers.length - 1) {
+            await sleep(Math.min(Number(error.retryAfter) * 1000, 30000));
+          }
+        }
+        if (index < manager.providers.length - 1) await sleep(delayMs);
       }
       if (!candidates.length) return null;
       candidates.sort((a, b) => {
