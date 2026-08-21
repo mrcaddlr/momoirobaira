@@ -56,15 +56,60 @@
     }catch(e){console.warn('Momoirobara persistence write failed:',e)}finally{db.close()}
   }
 
-  function savePrefs(){try{localStorage.setItem('momoirobara_desktop_memory',JSON.stringify({page:document.querySelector('.page.active')?.id?.replace(/^page-/,'')||'home',playlists:JSON.parse(localStorage.getItem('momoirobara_playlists')||'[]'),theme:localStorage.getItem('theme')||document.documentElement.dataset.theme||null,volume:localStorage.getItem('vol')||null,animations:localStorage.getItem('animations')||null,fx:localStorage.getItem('fx')||null,density:localStorage.getItem('density')||null,updated:Date.now()}))}catch{}}
+  const PREF_KEYS={
+    theme:['theme','momoirobara_theme'],
+    volume:['vol','momoirobara_volume'],
+    animations:['animations','momoirobara_animations'],
+    fx:['fx','momoirobara_fx'],
+    density:['density','momoirobara_density']
+  };
+  function readPref(name){
+    for(const key of PREF_KEYS[name]||[]){const v=localStorage.getItem(key);if(v!==null&&v!=='')return v}
+    return null;
+  }
+  function writePref(name,value){
+    if(value===null||value===undefined||value==='')return;
+    for(const key of PREF_KEYS[name]||[])localStorage.setItem(key,String(value));
+  }
+  function restorePrefs(){
+    try{
+      const state=JSON.parse(localStorage.getItem('momoirobara_desktop_memory')||'null');
+      if(state){
+        for(const name of Object.keys(PREF_KEYS)) if(readPref(name)==null&&state[name]!=null) writePref(name,state[name]);
+      }
+      const theme=readPref('theme');
+      if(theme){
+        document.documentElement.dataset.theme=theme;
+        const el=document.getElementById('theme'); if(el)el.value=theme;
+        if(typeof window.momoApplyTheme==='function')window.momoApplyTheme(theme);
+      }
+      const volume=readPref('volume');
+      if(volume!=null){const el=document.getElementById('vol');if(el){el.value=volume;if(window.audio)window.audio.volume=Math.max(0,Math.min(1,Number(volume)));}}
+      for(const name of ['animations','fx','density']){const value=readPref(name);const id=name==='fx'?'fxToggle':name;const el=document.getElementById(id);if(!el||value==null)continue;if(el.type==='checkbox')el.checked=value!=='off';else el.value=value;}
+    }catch(e){console.warn('Momoirobara settings restore:',e)}
+  }
+  function capturePrefs(){
+    try{
+      const theme=document.getElementById('theme')?.value||document.documentElement.dataset.theme||readPref('theme');
+      const volume=document.getElementById('vol')?.value??readPref('volume');
+      const animations=document.getElementById('animations')?.value??readPref('animations');
+      const fx=document.getElementById('fxToggle');
+      const density=document.getElementById('density')?.value??readPref('density');
+      writePref('theme',theme);writePref('volume',volume);writePref('animations',animations);writePref('fx',fx?(fx.checked?'on':'off'):readPref('fx'));writePref('density',density);
+      localStorage.setItem('momoirobara_desktop_memory',JSON.stringify({page:document.querySelector('.page.active')?.id?.replace(/^page-/,'')||'home',playlists:JSON.parse(localStorage.getItem('momoirobara_playlists')||'[]'),theme:readPref('theme'),volume:readPref('volume'),animations:readPref('animations'),fx:readPref('fx'),density:readPref('density'),updated:Date.now()}));
+    }catch(e){console.warn('Momoirobara settings save:',e)}
+  }
 
   function start(){
     desktopOnly();
+    restorePrefs();
     restoreLibrary();
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){saveLibrary();savePrefs()}});
-    window.addEventListener('pagehide',()=>{saveLibrary();savePrefs()});
-    document.addEventListener('momo:statechange',()=>{savePrefs();saveLibrary()});
-    setInterval(()=>{saveLibrary();savePrefs()},5000);
+    document.addEventListener('input',e=>{if(e.target?.matches('#theme,#vol,#animations,#fxToggle,#density'))capturePrefs()},true);
+    document.addEventListener('change',e=>{if(e.target?.matches('#theme,#vol,#animations,#fxToggle,#density'))setTimeout(capturePrefs,0)},true);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){saveLibrary();capturePrefs()}});
+    window.addEventListener('pagehide',()=>{saveLibrary();capturePrefs()});
+    document.addEventListener('momo:statechange',()=>{capturePrefs();saveLibrary()});
+    setInterval(()=>{saveLibrary();capturePrefs()},5000);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
