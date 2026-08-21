@@ -1,8 +1,14 @@
 const API = 'https://api.lrcmux.dev';
 
+function seconds(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return NaN;
+  return Math.abs(n) > 10000 ? n / 1000 : n;
+}
+
 function normalizeWord(w) {
-  const start = Number(w.start ?? w.start_ms ?? w.startTime);
-  const end = Number(w.end ?? w.end_ms ?? w.endTime ?? start);
+  const start = seconds(w.start ?? w.start_ms ?? w.startTime);
+  const end = seconds(w.end ?? w.end_ms ?? w.endTime ?? start);
   return { text: String(w.text ?? w.word ?? '').trim(), start, end };
 }
 
@@ -10,8 +16,8 @@ function normalizeLines(raw) {
   if (!Array.isArray(raw)) return [];
   return raw.map(line => ({
     text: String(line.text ?? line.line ?? '').trim(),
-    start: Number(line.start ?? line.start_ms ?? line.startTime),
-    end: Number(line.end ?? line.end_ms ?? line.endTime),
+    start: seconds(line.start ?? line.start_ms ?? line.startTime),
+    end: seconds(line.end ?? line.end_ms ?? line.endTime),
     words: (line.words ?? line.syllables ?? []).map(normalizeWord).filter(w => w.text && Number.isFinite(w.start))
   })).filter(l => l.text || l.words.length);
 }
