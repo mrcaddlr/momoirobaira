@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Momoirobara launcher for Linux + Flatpak Chrome.
+# Opens the GitHub Pages app as a standalone app window.
+
+URL="https://mrcaddlr.github.io/momoirobaira/"
+
+exec flatpak run com.google.Chrome --app="$URL" --start-maximized
