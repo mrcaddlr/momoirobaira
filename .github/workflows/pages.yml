@@ -28,6 +28,22 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Inject responsive layout into Pages build
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          css = '<link rel="stylesheet" href="./responsive.css?v=landscape-2">'
+          js = '<script src="./responsive.js?v=landscape-2" defer></script>'
+          if css not in s:
+              s = s.replace('</head>', css + '\n</head>', 1)
+          if js not in s:
+              s = s.replace('</body>', js + '\n</body>', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          grep -n "responsive.css\|responsive.js" index.html
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
