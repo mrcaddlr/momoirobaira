@@ -33,17 +33,19 @@ export const lyricsPlusProvider = {
   id: 'lyricsplus',
   async getLyrics(track, options = {}) {
     const m = track.metadata || {};
-    const params = new URLSearchParams({
-      title: String(m.title ?? track.title ?? track.name ?? ''),
-      artist: String(m.artist ?? track.artist ?? track.artistName ?? '')
-    });
+    const title = String(m.title ?? track.title ?? track.name ?? '').trim();
+    const artist = String(m.artist ?? track.artist ?? track.artistName ?? '').trim();
+    if (!title || !artist) return null;
+    const params = new URLSearchParams({ title, artist });
     const album = m.album ?? track.album;
     const duration = Number(m.duration ?? track.duration);
     const isrc = m.isrc ?? track.isrc;
     if (album) params.set('album', album);
     if (Number.isFinite(duration) && duration > 0) params.set('duration', String(duration));
     if (isrc) params.set('isrc', isrc);
-    params.set('source', 'apple,lyricsplus,spotify,musixmatch-word');
+    // Deliberately do not request the Musixmatch source. Momoirobara's experimental
+    // provider chain is LyricsPlus -> LRCLIB -> LRC Mux.
+    params.set('source', 'apple,lyricsplus,spotify');
 
     let lastError;
     for (const mirror of MIRRORS) {
@@ -54,9 +56,12 @@ export const lyricsPlusProvider = {
         const lines = parseLines(data);
         if (lines.length || data?.plainLyrics) return { ...data, lines, rawFormat: data?.type || null };
       } catch (error) {
+        if (error?.name === 'AbortError') throw error;
         lastError = error;
       }
     }
     throw lastError || new Error('LyricsPlus: no result');
   }
 };
+
+export default lyricsPlusProvider;
