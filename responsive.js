@@ -100,15 +100,26 @@
     }catch(e){console.warn('Momoirobara settings save:',e)}
   }
 
+  async function startExperimentalLyrics(){
+    try{
+      const mod=await import('./lyrics/integration.js');
+      await mod.bootstrapMomoirobaraLyrics?.();
+    }catch(error){
+      console.warn('Momoirobara experimental lyrics bootstrap failed:',error);
+    }
+  }
+
   function start(){
     desktopOnly();
     restorePrefs();
     restoreLibrary();
+    startExperimentalLyrics();
     document.addEventListener('input',e=>{if(e.target?.matches('#theme,#vol,#animations,#fxToggle,#density'))capturePrefs()},true);
     document.addEventListener('change',e=>{if(e.target?.matches('#theme,#vol,#animations,#fxToggle,#density'))setTimeout(capturePrefs,0)},true);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){saveLibrary();capturePrefs()}});
     window.addEventListener('pagehide',()=>{saveLibrary();capturePrefs()});
-    document.addEventListener('momo:statechange',()=>{capturePrefs();saveLibrary()});
+    document.addEventListener('momo:statechange',()=>{capturePrefs();saveLibrary();startExperimentalLyrics()});
+    window.addEventListener('momo:songchange',startExperimentalLyrics);
     setInterval(()=>{saveLibrary();capturePrefs()},5000);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
