@@ -1,5 +1,4 @@
 // Enhanced LRC / word-timing parser and renderer helpers.
-// Provider-agnostic: accepts [word] timing data after normalization.
 
 export function parseEnhancedLrc(lrc = '') {
   const lines = [];
@@ -17,35 +16,35 @@ export function parseEnhancedLrc(lrc = '') {
     for (let i = 0; i < words.length; i++) words[i].end = words[i + 1]?.start ?? start + 5;
     lines.push({ text: words.length ? words.map(w => w.text).join('').trim() : body.trim(), start, end: null, words });
   }
-  for (let i = 0; i < lines.length; i++) lines[i].end = lines[i + 1]?.start ?? (lines[i].start + 5);
+  for (let i = 0; i < lines.length; i++) lines[i].end = lines[i + 1]?.start ?? lines[i].start + 5;
   return lines;
 }
 
 export function wordProgress(word, time) {
-  const start = Number(word?.start);
-  const end = Number(word?.end);
+  const start = Number(word?.start), end = Number(word?.end);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return time >= start ? 1 : 0;
   return Math.max(0, Math.min(1, (time - start) / (end - start)));
 }
 
 export function renderWordTimedLine(container, line, currentTime) {
   if (!container || !line) return;
-  container.replaceChildren();
   if (!Array.isArray(line.words) || !line.words.length) {
     container.textContent = line.text || '';
     return;
   }
   const fragment = document.createDocumentFragment();
-  for (const word of line.words) {
-    const span = document.createElement('span');
-    span.className = 'momo-lyric-word';
+  const old = container.querySelectorAll('.momo-lyric-word');
+  if (old.length !== line.words.length) container.replaceChildren();
+  const nodes = container.querySelectorAll('.momo-lyric-word');
+  line.words.forEach((word, index) => {
+    let span = nodes[index];
+    if (!span) { span = document.createElement('span'); span.className = 'momo-lyric-word'; fragment.appendChild(span); }
     span.textContent = word.text;
     const progress = wordProgress(word, currentTime);
     span.style.setProperty('--word-progress', `${progress * 100}%`);
     span.dataset.progress = progress.toFixed(3);
-    fragment.appendChild(span);
-  }
-  container.appendChild(fragment);
+  });
+  if (fragment.childNodes.length) container.appendChild(fragment);
 }
 
 export function installWordTimingStyles(doc = document) {
@@ -53,7 +52,7 @@ export function installWordTimingStyles(doc = document) {
   const style = doc.createElement('style');
   style.id = 'momo-word-timing-css';
   style.textContent = `
-    .momo-lyric-word{--word-progress:0%;display:inline;color:var(--muted);background:linear-gradient(90deg,var(--text) var(--word-progress),var(--muted) var(--word-progress));background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;transition:background-size .06s linear}
+    .momo-lyric-word{--word-progress:0%;display:inline;color:var(--muted);background:linear-gradient(90deg,var(--text) var(--word-progress),var(--muted) var(--word-progress));background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
   `;
   doc.head.appendChild(style);
 }
