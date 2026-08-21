@@ -1,31 +1,35 @@
 /* MOMOIROBARA RESPONSIVE LANDSCAPE LAYOUT */
-#momoPortraitBlock{display:none}
-#momoResponsiveMenuBtn,#momoResponsiveMenuClose{display:none}
+#momoPortraitBlock{display:none!important}
+#momoResponsiveMenuBtn,#momoResponsiveMenuClose{display:none!important}
 
+/* Portrait is intentionally unavailable. */
 @media (orientation:portrait){
   body > *:not(#momoPortraitBlock){visibility:hidden!important}
-  #momoPortraitBlock{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:32px;text-align:center;background:var(--bg,#faf7fb);color:var(--text,#222);font-family:inherit}
+  #momoPortraitBlock{position:fixed!important;inset:0!important;z-index:2147483647!important;display:grid!important;place-items:center!important;padding:32px!important;text-align:center!important;background:var(--bg,#faf7fb)!important;color:var(--text,#222)!important;font-family:inherit!important;visibility:visible!important}
   #momoPortraitBlock .momo-portrait-card{max-width:360px;padding:28px;border:1px solid var(--border,#ddd);border-radius:24px;background:var(--surface,#fff);box-shadow:0 20px 60px rgba(0,0,0,.12)}
   #momoPortraitBlock .momo-rotate-icon{font-size:42px;line-height:1;margin-bottom:16px}
   #momoPortraitBlock h2{margin:0 0 8px;font-size:22px}
   #momoPortraitBlock p{margin:0;opacity:.7;line-height:1.5}
 }
 
-@media (orientation:landscape) and (min-width:600px){
-  #momoResponsiveMenuBtn{display:grid;position:fixed;left:14px;top:14px;z-index:10000;width:42px;height:42px;place-items:center;border:1px solid var(--border);border-radius:13px;background:var(--solid,var(--surface));color:var(--text);box-shadow:var(--shadow2,0 8px 24px rgba(0,0,0,.12));cursor:pointer}
-  #momoResponsiveMenuBtn svg,#momoResponsiveMenuClose svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-  #mobileMenuClose{display:none!important}
+/* Normal landscape: one hamburger. The close button only exists while the drawer is open. */
+@media (orientation:landscape) and (min-width:600px) and (max-width:899px){
+  #mobile{display:grid!important;position:fixed!important;left:14px!important;top:14px!important;z-index:10003!important}
+  #momoResponsiveMenuBtn{display:none!important}
+  #momoResponsiveMenuClose{display:none!important;position:fixed!important;left:14px!important;top:14px!important;z-index:10004!important;width:42px!important;height:42px!important;place-items:center!important;border:1px solid var(--border)!important;border-radius:13px!important;background:var(--solid,var(--surface))!important;color:var(--text)!important;box-shadow:var(--shadow2,0 8px 24px rgba(0,0,0,.12))!important;cursor:pointer!important}
   body.momo-menu-open #momoResponsiveMenuClose{display:grid!important}
-  #momoResponsiveMenuClose{position:fixed;left:14px;top:14px;z-index:10002;width:42px;height:42px;place-items:center;border:1px solid var(--border);border-radius:13px;background:var(--solid,var(--surface));color:var(--text);box-shadow:var(--shadow2,0 8px 24px rgba(0,0,0,.12));cursor:pointer}
-  body.momo-menu-open #momoResponsiveMenuBtn{display:none}
-  .side{z-index:10001}
+  body.momo-menu-open #momoResponsiveMenuBtn{display:none!important}
+  #mobileMenuClose{display:none!important}
+  body.momo-menu-open #mobileMenuClose{display:none!important}
+  .side{z-index:10001!important}
   body.momo-responsive-menu .side{transform:translateX(0)!important;visibility:visible!important;opacity:1!important}
   body.momo-responsive-menu::after{content:"";position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.18);backdrop-filter:blur(2px)}
 }
 
-/* Z Fold inner-screen / tablet-like landscape: permanent sidebar, no floating controls. */
+/* Large landscape / Z Fold inner display: desktop layout. Absolutely no floating menu/X controls. */
 @media (orientation:landscape) and (min-width:900px){
-  #momoResponsiveMenuBtn,#momoResponsiveMenuClose,#mobileMenuClose{display:none!important}
-  body.momo-responsive-menu::after{display:none}
+  #mobile,#momoResponsiveMenuBtn,#momoResponsiveMenuClose,#mobileMenuClose{display:none!important;visibility:hidden!important;pointer-events:none!important}
+  body.momo-responsive-menu::after{display:none!important;content:none!important}
+  body.momo-responsive-menu,body.momo-menu-open{overflow:auto!important}
   .side{transform:none!important;visibility:visible!important;opacity:1!important}
 }
