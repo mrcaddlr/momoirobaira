@@ -1,0 +1,76 @@
+name: Repair Momoirobara runtime
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Repair broken LRC parser and add navigation fallback
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+
+          # A previous edit accidentally put a literal newline inside the
+          # parseEnhancedLRC regex, which makes the entire module fail to parse.
+          fixed = """function parseEnhancedLRC(raw){const out=[];for(const line of String(raw||'').split(/\\r?\\n/)){const lm=line.match(/^\\[(\\d+):(\\d+(?:\\.\\d+)?)\\]/);if(!lm)continue;const lineTime=+lm[1]*60+ +lm[2];const body=line.replace(/^\\[[^\\]]+\\]/,'').trim();const words=[];const re=/<(\\d+):(\\d+(?:\\.\\d+)?)>([^<]+)/g;let m;while((m=re.exec(body)))words.push({time:+m[1]*60+ +m[2],text:m[3].trim()});const text=body.replace(/<\\d+:\\d+(?:\\.\\d+)?>/g,'').trim();if(text)out.push({time:lineTime,text,words});}return out}"""
+
+          pattern = r"function parseEnhancedLRC\(raw\)\{.*?\}\nfunction renderLyrics"
+          new_text, n = re.subn(pattern, fixed + "\nfunction renderLyrics", text, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('Could not locate parseEnhancedLRC')
+          text = new_text
+
+          # Keep Pages navigation functional even if a future optional module
+          # fails. This only binds the already-existing page buttons.
+          fallback = r'''\n<script id="momo-pages-navigation-fallback">\n(function(){\n  function boot(){\n    var pages=['home','library','favorites','artist','playlist','settings'];\n    function nav(page){\n      pages.forEach(function(name){\n        var el=document.getElementById('page-'+name);\n        if(el) el.classList.toggle('active',name===page);\n      });\n      document.querySelectorAll('.nav button').forEach(function(b){\n        b.classList.toggle('active',b.dataset.page===page);\n      });\n      var side=document.getElementById('side'),mobile=document.getElementById('mobile');\n      if(side) side.classList.remove('open');\n      if(mobile){mobile.classList.remove('menu-open');mobile.setAttribute('aria-expanded','false');}\n    }\n    document.querySelectorAll('.nav button[data-page]').forEach(function(b){\n      b.addEventListener('click',function(e){e.preventDefault();nav(b.dataset.page);});\n    });\n    window.momoPagesNavigate=nav;\n  }\n  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();\n})();\n</script>\n'''
+          if 'momo-pages-navigation-fallback' not in text:
+              text = text.replace('</body>', fallback + '</body>')
+
+          p.write_text(text, encoding='utf-8')
+
+      - name: Validate JavaScript blocks
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          text = Path('index.html').read_text(encoding='utf-8')
+          blocks = re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>', text, flags=re.S|re.I)
+          for i, code in enumerate(blocks, 1):
+              if not code.strip():
+                  continue
+              with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as f:
+                  f.write(code)
+                  name=f.name
+              r=subprocess.run(['node','--check',name],text=True,capture_output=True)
+              if r.returncode:
+                  print(r.stderr)
+                  raise SystemExit(f'JavaScript block {i} failed syntax validation')
+          print(f'Validated {len(blocks)} script blocks')
+          PY
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'No runtime changes needed.'
+            exit 0
+          fi
+          git commit -m 'fix runtime navigation and LRC parser'
+          git push
