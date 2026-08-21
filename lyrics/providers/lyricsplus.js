@@ -37,7 +37,8 @@ export const lyricsPlusProvider = {
     if (album) params.set('album', album);
     if (Number.isFinite(duration) && duration > 0) params.set('duration', String(duration));
     if (isrc) params.set('isrc', isrc);
-    params.set('source', 'apple,lyricsplus,musixmatch,spotify,musixmatch-word');
+    // Deliberately exclude Musixmatch from the provider request.
+    params.set('source', 'apple,lyricsplus,spotify');
 
     let lastError;
     for (const mirror of MIRRORS) {
@@ -47,7 +48,18 @@ export const lyricsPlusProvider = {
         const data = await response.json();
         const lines = parseLines(data);
         if (lines.length || data?.plainLyrics) {
-          return { ...data, lines, rawFormat: data?.type || null };
+          return {
+            ...data,
+            lines,
+            rawFormat: data?.type || null,
+            metadata: {
+              title: data?.title ?? data?.trackName ?? m.title ?? track.title ?? '',
+              artist: data?.artist ?? data?.artistName ?? m.artist ?? track.artist ?? '',
+              album: data?.album ?? data?.albumName ?? m.album ?? track.album ?? '',
+              duration: Number(data?.duration ?? m.duration ?? track.duration ?? 0),
+              isrc: data?.isrc ?? m.isrc ?? track.isrc ?? ''
+            }
+          };
         }
       } catch (error) {
         lastError = error;
@@ -56,3 +68,5 @@ export const lyricsPlusProvider = {
     throw lastError || new Error('LyricsPlus: no result');
   }
 };
+
+export default lyricsPlusProvider;
