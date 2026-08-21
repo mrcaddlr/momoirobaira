@@ -1,0 +1,38 @@
+name: Inject responsive layout
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'responsive.css'
+      - 'responsive.js'
+      - '.github/workflows/inject-responsive.yml'
+permissions:
+  contents: write
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[responsive-injected]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inject files into index.html
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          css='<link rel="stylesheet" href="./responsive.css?v=1">'
+          js='<script src="./responsive.js?v=1" defer></script>'
+          if css not in s:
+              s=s.replace('</head>', css+'\n</head>', 1)
+          if js not in s:
+              s=s.replace('</body>', js+'\n</body>', 1)
+          p.write_text(s)
+          PY
+      - name: Commit injected index
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Apply responsive landscape layout [responsive-injected]'
+          git push
